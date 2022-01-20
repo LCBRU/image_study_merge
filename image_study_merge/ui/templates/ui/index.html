@@ -1,0 +1,51 @@
+{% extends "ui/page.html" %}
+{% from "lbrc_flask/form_macros.html" import render_search, render_pagination, render_button_bar %}
+{% from "lbrc_flask/modal_macros.html" import render_modal %}
+
+{% block content %}
+
+<section>
+    <div class="page-header">
+        <h1>Study Data</h1>
+
+        {{ render_search(
+            search_form,
+            'ui.index',
+            placeholder='enter search text - searches file name',
+            buttons=[
+                {
+                    'text': 'Upload Study Data',
+                    'endpoint': 'ui.study_data_upload',
+                },
+            ],
+        ) }}
+
+    </div>
+
+    <ul class="list-group">
+        {% for s in study_datas.items %}
+            <li class="list-group-item summary_details">
+                <div class='row'>
+                    <div class="col-7">
+                        <div>
+                            <header>
+                                <h1>{{s.study_name}}</h1>
+                                <h2>{{s.filename}} uploaded {{s.created_date | datetime_humanize}}</h2>
+                            </header>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+
+{{ render_pagination(study_datas, 'ui.index', form=search_form) }}
+
+{% endblock %}
+
+
+{% block js %}
+{% endblock %}
