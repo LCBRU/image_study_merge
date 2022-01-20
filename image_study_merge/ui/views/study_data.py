@@ -1,5 +1,5 @@
 from flask import render_template, request, flash, redirect, url_for, send_file
-from lbrc_flask.forms import SearchForm, FlashingForm, FileField
+from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm
 from .. import blueprint
 from image_study_merge.model import StudyData, study_data_factory
 from flask_wtf.file import FileRequired
@@ -39,6 +39,7 @@ def index():
         "ui/index.html",
         study_datas=study_datas,
         search_form=search_form,
+        confirm_form=ConfirmForm(),
     )
 
 
@@ -59,6 +60,8 @@ def study_data_upload():
 
         form.upload.data.save(sd.filepath)
         
+        print(sd.get_data().get_column_names())
+
         flash('Study Data Uploaded')
 
         return redirect(url_for('ui.index'))
@@ -77,3 +80,15 @@ def study_data_download(id):
         as_attachment=True,
         download_name=sd.filename,
     )
+
+
+@blueprint.route("/study_data/delete", methods=['POST'])
+def study_data_delete():
+    form = ConfirmForm()
+
+    if form.validate_on_submit():
+        sd = StudyData.query.get_or_404(form.id.data)
+        db.session.delete(sd)
+        db.session.commit()
+
+    return redirect(url_for('ui.index'))

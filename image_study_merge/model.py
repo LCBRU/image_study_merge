@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from lbrc_flask.security import AuditMixin
 from lbrc_flask.model import CommonMixin
 from lbrc_flask.database import db
+from lbrc_flask.column_data import ExcelData, Excel97Data, CsvData
 
 
 def study_data_factory(filename, **kwargs):
@@ -49,14 +50,23 @@ class StudyDataXlsx(StudyData):
         "polymorphic_identity": '.xslx',
     }
 
+    def get_data(self):
+        return ExcelData(self.filepath)
+
 
 class StudyDataExcel97(StudyData):
     __mapper_args__ = {
         "polymorphic_identity": '.xsl',
     }
 
+    def get_data(self):
+        return Excel97Data(self.filepath)
+
 
 class StudyDataCsv(StudyData):
     __mapper_args__ = {
         "polymorphic_identity": '.csv',
     }
+
+    def get_data(self):
+        return CsvData(self.filepath)

@@ -35,6 +35,17 @@
                         </div>
                     </div>
                     <div class="col-5">
+                        <div class="btn-toolbar float-right" role="toolbar">
+                            <div class="btn-group mr-1 mb-1" role="group">
+                                <a class="study_data_delete"
+                                    data-toggle="modal"
+                                    title="Delete study data {{ s.study_name }}"
+                                    data-id="{{ s.id }}"
+                                    data-name="{{ s.study_name }}"
+                                    data-target="#deleteModal"
+                                    href="#"><i class="fas fa-trash"></i></a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </li>
@@ -44,8 +55,32 @@
 
 {{ render_pagination(study_datas, 'ui.index', form=search_form) }}
 
+
+{% call render_modal('deleteModal', 'Delete Study Data') %}
+    <p id="modal_description">Please confirm that you wish to delete <span id="name"></span>.</p>
+    <form id="delete_form" action="{{ url_for('ui.study_data_delete', prev=request.full_path) }}" method="POST" enctype="multipart/form-data">
+        <fieldset>
+            {{ confirm_form.hidden_tag() }}
+
+            {{ render_button_bar(cancel_url=request.full_path, submit_label="Delete") }}
+        </fieldset>
+    </form>
+{% endcall %}
+
+
 {% endblock %}
 
 
 {% block js %}
+<script>
+    $(document).ready(function(){
+        $('#deleteModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var modal = $(this);
+
+            modal.find('#name').text(button.data('name'));
+            modal.find("#id").val(button.data('id'));
+        });
+    });
+</script>
 {% endblock %}
