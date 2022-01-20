@@ -30,7 +30,7 @@
                         <div>
                             <header>
                                 <h1>{{s.study_name}}</h1>
-                                <h2>{{s.filename}} uploaded {{s.created_date | datetime_humanize}}</h2>
+                                <h2><a href="{{ url_for('ui.study_data_download', id=s.id) }}">{{s.filename}}</a> uploaded {{s.created_date | datetime_humanize}}</h2>
                             </header>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, send_file
 from lbrc_flask.forms import SearchForm, FlashingForm, FileField
 from .. import blueprint
 from image_study_merge.model import StudyData, study_data_factory
@@ -66,4 +66,14 @@ def study_data_upload():
     return render_template(
         "ui/study_data_upload.html",
         form=form,
+    )
+
+@blueprint.route("/study_data/download/<int:id>")
+def study_data_download(id):
+    sd = StudyData.query.get_or_404(id)
+
+    return send_file(
+        sd.filepath,
+        as_attachment=True,
+        download_name=sd.filename,
     )
