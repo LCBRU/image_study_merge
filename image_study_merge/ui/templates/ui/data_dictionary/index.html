@@ -1,0 +1,68 @@
+{% extends "ui/page.html" %}
+{% from "lbrc_flask/form_macros.html" import render_search, render_pagination, render_button_bar %}
+{% from "lbrc_flask/modal_macros.html" import render_modal %}
+
+{% block content %}
+
+<section>
+    <div class="page-header">
+        <h1>Data Dictionary</h1>
+
+        {{ render_search(
+            search_form,
+            'ui.index',
+            placeholder='enter search text - searches column name',
+            buttons=[
+                {
+                    'text': 'Upload',
+                    'endpoint': 'ui.data_dictionary_upload',
+                },
+            ],
+        ) }}
+
+    </div>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Form Name</th>
+                <th scope="col">Section Name</th>
+                <th scope="col">Name</th>
+                <th scope="col">Label</th>
+                <th scope="col">Type</th>
+                <th scope="col">Choices</th>
+                <th scope="col">Notes</th>
+                <th scope="col">Validation</th>
+                <th scope="col">Min</th>
+                <th scope="col">Max</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in data_dictionary.items %}
+                <tr>
+                    <th scope="row">{{ d.field_number }}</th>
+                    <td>{{ d.form_name }}</td>
+                    <td>{{ d.section_name }}</td>
+                    <td>{{ d.field_name }}</td>
+                    <td>{{ d.field_label }}</td>
+                    <td>{{ d.field_type }}</td>
+                    <td>{{ d.choices }}</td>
+                    <td>{{ d.field_note }}</td>
+                    <td>{{ d.text_validation_type }}</td>
+                    <td>{{ d.text_validation_min }}</td>
+                    <td>{{ d.text_validation_max }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</section>
+
+{{ render_pagination(data_dictionary, 'ui.data_dictionary', form=search_form) }}
+
+{% endblock %}
+
+
+{% block js %}
+{% endblock %}

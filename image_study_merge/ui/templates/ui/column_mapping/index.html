@@ -1,0 +1,74 @@
+{% extends "ui/page.html" %}
+{% from "lbrc_flask/form_macros.html" import render_search, render_button_bar, render_field_actual %}
+{% from "lbrc_flask/modal_macros.html" import render_modal %}
+
+{% block content %}
+
+<section>
+    <div class="page-header">
+        <h1>Column Mappings for Study Data '{{ study_data.study_name }}'</h1>
+
+        {{ render_search(
+            search_form,
+            'ui.index',
+            placeholder='enter search text - searches column name',
+            buttons=[
+                {
+                    'text': 'Back',
+                    'endpoint': 'ui.index',
+                },
+            ],
+        ) }}
+
+    </div>
+
+    <form action="{{ url_for('ui.column_mapping_save', id=study_data.id) }}" method="POST" class="form panel-body" enctype="multipart/form-data">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Destination</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                    {{ mapping_form.hidden_tag() }}
+
+                    {% for f in mapping_form.fields %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>
+                                {{ f['name']._value() }}
+                            </td>
+                            <td>
+                                <div class="form-group{% if f['mapping'].errors %} has-error{%endif%}">
+                                    {{ render_field_actual(f['mapping']) }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+
+            </tbody>
+        </table>
+        {{ render_button_bar(cancel_url=previous_page, submit_label="Save") }}
+    </form>
+
+</section>
+
+{% endblock %}
+
+
+{% block js %}
+
+<script type="text/javascript">
+    select_options = {{ data_dictionary | jsonify }}
+
+    $(document).ready(function() {
+        $('[name$="mapping"]').select2({
+            data: select_options
+        });
+    });
+</script>
+
+{% endblock %}

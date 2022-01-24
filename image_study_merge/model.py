@@ -70,3 +70,44 @@ class StudyDataCsv(StudyData):
 
     def get_data(self):
         return CsvData(self.filepath)
+
+
+class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    study_data_id = db.Column(db.Integer, db.ForeignKey(StudyData.id))
+    study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete"))
+
+    name = db.Column(db.String(500))
+    mapping = db.Column(db.String(100))
+
+
+class StudyDataRow(AuditMixin, CommonMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    study_data_id = db.Column(db.Integer, db.ForeignKey(StudyData.id))
+    study_data = db.relationship(StudyData, backref=db.backref("rows", cascade="all,delete"))
+
+
+class StudyDataRowData(AuditMixin, CommonMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    study_data_row_id = db.Column(db.Integer, db.ForeignKey(StudyDataRow.id))
+    study_data_row = db.relationship(StudyDataRow, backref=db.backref("rows", cascade="all,delete"))
+    study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
+    study_data_column = db.relationship(StudyDataColumn, backref=db.backref("data", cascade="all,delete"))
+
+    value = db.Column(db.String(1000))
+
+
+class DataDictionary(AuditMixin, CommonMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    field_number = db.Column(db.Integer)
+    field_name = db.Column(db.String(100))
+    form_name = db.Column(db.String(100))
+    section_name = db.Column(db.String(100))
+    field_type = db.Column(db.String(100))
+    field_label = db.Column(db.String(100))
+    choices = db.Column(db.String(100))
+    field_note = db.Column(db.String(100))
+    text_validation_type = db.Column(db.String(100))
+    text_validation_min = db.Column(db.String(100))
+    text_validation_max = db.Column(db.String(100))
+

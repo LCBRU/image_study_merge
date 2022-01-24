@@ -37,13 +37,20 @@
                     <div class="col-5">
                         <div class="btn-toolbar float-right" role="toolbar">
                             <div class="btn-group mr-1 mb-1" role="group">
+                                <a class="column_mapping"
+                                    title="Edit column mapping for study data {{ s.study_name }}"
+                                    href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-random"></i>
+                                </a>
+                            </div>
+                            <div class="btn-group mr-1 mb-1" role="group">
                                 <a class="study_data_delete"
                                     data-toggle="modal"
                                     title="Delete study data {{ s.study_name }}"
                                     data-id="{{ s.id }}"
                                     data-name="{{ s.study_name }}"
                                     data-target="#deleteModal"
-                                    href="#"><i class="fas fa-trash"></i></a>
+                                    href="#"><i class="fas fa-trash"></i>
+                                </a>
                             </div>
                         </div>
                     </div>

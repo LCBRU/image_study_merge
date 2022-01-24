@@ -1,11 +1,13 @@
+from .. import blueprint
 from flask import render_template, request, flash, redirect, url_for, send_file
 from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm
-from .. import blueprint
+from image_study_merge.services import extract_study_data
 from image_study_merge.model import StudyData, study_data_factory
 from flask_wtf.file import FileRequired
 from lbrc_flask.database import db
 from wtforms import StringField
 from wtforms.validators import Length, DataRequired
+
 
 class UploadStudyDataForm(FlashingForm):
     study_name = StringField("Study Name", validators=[Length(max=100), DataRequired()])
@@ -59,8 +61,8 @@ def study_data_upload():
         db.session.commit()
 
         form.upload.data.save(sd.filepath)
-        
-        print(sd.get_data().get_column_names())
+
+        extract_study_data(sd.id)
 
         flash('Study Data Uploaded')
 
@@ -70,6 +72,7 @@ def study_data_upload():
         "ui/study_data_upload.html",
         form=form,
     )
+
 
 @blueprint.route("/study_data/download/<int:id>")
 def study_data_download(id):
