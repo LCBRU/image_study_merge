@@ -1,4 +1,5 @@
 import os
+import re
 from flask import current_app
 from pathlib import Path
 from werkzeug.utils import secure_filename
@@ -74,6 +75,7 @@ class StudyDataCsv(StudyData):
 
 class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    column_number = db.Column(db.Integer)
     study_data_id = db.Column(db.Integer, db.ForeignKey(StudyData.id))
     study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete"))
 
@@ -111,3 +113,10 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
     text_validation_min = db.Column(db.String(100))
     text_validation_max = db.Column(db.String(100))
 
+    @property
+    def form_name_title(self):
+        return re.sub(r"[-_]", " ", self.form_name).title()
+
+    @property
+    def group_name(self):
+        return ': '.join([self.form_name_title, self.section_name])

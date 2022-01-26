@@ -1,30 +1,46 @@
+import time
 from flask import render_template, request, redirect, url_for
 from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn
 from lbrc_flask.forms import SearchForm, FlashingForm
+from lbrc_flask.database import db
 from itertools import groupby
-from wtforms import SelectField, StringField, FormField, FieldList, Form
+from functools import lru_cache
+from wtforms import StringField, FormField, FieldList, Form, HiddenField, IntegerField
+from wtforms_components import SelectField
 from .. import blueprint
 
 
+@lru_cache
+def _data_dictionary_choices(time_to_live):
+    data_dictionary = []
+
+    for k, g in groupby(DataDictionary.query.all(), lambda dd: dd.group_name):
+        data_dictionary.append((
+            k,
+            [(dd.field_name, dd.field_label ) for dd in g]
+        ))
+
+    return [('', '[No Mapping]')] + data_dictionary
+
+
+def data_dictionary_choices():
+    return _data_dictionary_choices(time_to_live=round(time.time() / 60))
+
+
 class MappingForm(Form):
+    id = HiddenField('Id')
+    column_number = IntegerField('Column Number')
     name = StringField('Source', render_kw={'readonly': True})
-    mapping = SelectField('Destination', choices=[], default='', validate_choice=False)
+    mapping = SelectField(
+        'Destination',
+        choices=data_dictionary_choices,
+        default='',
+        validate_choice=False,
+    )
 
 
 class MappingsForm(FlashingForm):
     fields = FieldList(FormField(MappingForm))
-
-
-def _get_data_dictionary_values():
-    data_dictionary = []
-
-    for k, g in groupby(DataDictionary.query.all(), lambda dd: dd.form_name):
-        data_dictionary.append({
-            'text': k,
-            'children': [{'id': dd.field_name, 'text': dd.field_label } for dd in g]
-        })
-
-    return [{'id': '', 'text': '[No Mapping]'}] + data_dictionary
 
 
 @blueprint.route("/column_mapping/<int:id>", methods=['GET', 'POST'])
@@ -47,7 +63,6 @@ def column_mapping(id):
         study_data=study_data,
         search_form=search_form,
         mapping_form=mapping_form,
-        data_dictionary=_get_data_dictionary_values(),
     )
 
 
@@ -55,11 +70,15 @@ def column_mapping(id):
 def column_mapping_save(id):
     study_data = StudyData.query.get_or_404(id)
 
+    columns = {str(c.id): c for c in study_data.columns}
+
     form = MappingsForm()
 
     if form.validate_on_submit():
         for field in form.fields:
-            print(field.name)
-            print(field.mapping)
+            columns[field.data['id']].mapping = field.data['mapping']
+
+    db.session.add_all(columns.values())
+    db.session.commit()
 
     return redirect(url_for('ui.column_mapping', id=id))

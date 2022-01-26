@@ -12,9 +12,10 @@ def extract_study_data(study_data_id):
 def extract_study_data_columns(study_data):
     columns = [
         StudyDataColumn(
+            column_number=i,
             study_data_id=study_data.id,
             name=c,
-        ) for c in study_data.get_data().get_column_names()
+        ) for i, c in enumerate(study_data.get_data().get_column_names(), 1)
     ]
 
     db.session.add_all(columns)

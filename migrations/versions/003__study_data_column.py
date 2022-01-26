@@ -21,6 +21,7 @@ def upgrade(migrate_engine):
         "study_data_column",
         meta,
         Column("id", Integer, primary_key=True),
+        Column("column_number", Integer),
         Column("study_data_id", Integer, ForeignKey(sd.c.id), index=True, nullable=False),
         Column("name", NVARCHAR(500)),
         Column("mapping", NVARCHAR(100)),

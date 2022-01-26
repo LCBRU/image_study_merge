@@ -10,7 +10,7 @@
 
         {{ render_search(
             search_form,
-            'ui.index',
+            'ui.column_mapping',
             placeholder='enter search text - searches column name',
             buttons=[
                 {
@@ -18,6 +18,7 @@
                     'endpoint': 'ui.index',
                 },
             ],
+            id=study_data.id,
         ) }}
 
     </div>
@@ -37,7 +38,7 @@
 
                     {% for f in mapping_form.fields %}
                         <tr>
-                            <th scope="row">{{ loop.index }}</th>
+                            <th scope="row">{{ f['column_number']._value() }}{{ f['id']}}</th>
                             <td>
                                 {{ f['name']._value() }}
                             </td>
@@ -62,11 +63,9 @@
 {% block js %}
 
 <script type="text/javascript">
-    select_options = {{ data_dictionary | jsonify }}
-
     $(document).ready(function() {
         $('[name$="mapping"]').select2({
-            data: select_options
+            width: '100%',
         });
     });
 </script>
