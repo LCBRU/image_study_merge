@@ -1,4 +1,7 @@
+from ast import Try
+from nis import cat
 import time
+from flask_api import status
 from flask import render_template, request, redirect, url_for
 from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn
 from lbrc_flask.forms import SearchForm, FlashingForm
@@ -54,8 +57,14 @@ def column_mapping(id):
     if search_form.search.data:
         q = q.filter(StudyDataColumn.name.like(f'%{search_form.search.data}%'))
 
+    mappings = q.paginate(
+            page=search_form.page.data,
+            per_page=20,
+            error_out=False,
+        )
+
     mapping_form = MappingsForm(data={
-        'fields': q.all(),
+        'fields': mappings.items,
     })
 
     return render_template(
@@ -63,6 +72,7 @@ def column_mapping(id):
         study_data=study_data,
         search_form=search_form,
         mapping_form=mapping_form,
+        mappings=mappings,
     )
 
 
@@ -82,3 +92,22 @@ def column_mapping_save(id):
     db.session.commit()
 
     return redirect(url_for('ui.column_mapping', id=id))
+
+
+@blueprint.route("/column_mapping/update", methods=['POST'])
+def column_mapping_update():
+    try:
+        study_data_column = StudyDataColumn.query.get_or_404(request.json['study_data_column_id'])
+
+        study_data_column.mapping = request.json['mapping']
+
+        print(request.json['study_data_column_id'])
+        print(request.json['mapping'])
+
+        db.session.add(study_data_column)
+        db.session.commit()
+
+        return '', status.HTTP_200_OK
+
+    except:
+        return 'A problem has occured.  Please try reloading the page.', status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -1,5 +1,5 @@
 {% extends "ui/page.html" %}
-{% from "lbrc_flask/form_macros.html" import render_search, render_button_bar, render_field_actual %}
+{% from "lbrc_flask/form_macros.html" import render_search, render_button_bar, render_field_actual, render_pagination %}
 {% from "lbrc_flask/modal_macros.html" import render_modal %}
 
 {% block content %}
@@ -27,9 +27,9 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Source</th>
-                    <th scope="col">Destination</th>
+                    <th scope="col" class="w-auto">#</th>
+                    <th scope="col" class="w-50">Source</th>
+                    <th scope="col" class="w-50">Destination</th>
                 </tr>
             </thead>
             <tbody>
@@ -38,13 +38,13 @@
 
                     {% for f in mapping_form.fields %}
                         <tr>
-                            <th scope="row">{{ f['column_number']._value() }}{{ f['id']}}</th>
+                            <th scope="row">{{ f['column_number']._value() }}</th>
                             <td>
                                 {{ f['name']._value() }}
                             </td>
                             <td>
                                 <div class="form-group{% if f['mapping'].errors %} has-error{%endif%}">
-                                    {{ render_field_actual(f['mapping']) }}
+                                    {{ render_field_actual(f['mapping'], **{'data-id': f['id']._value()}) }}
                                 </div>
                             </td>
                         </tr>
@@ -52,10 +52,11 @@
 
             </tbody>
         </table>
-        {{ render_button_bar(cancel_url=previous_page, submit_label="Save") }}
     </form>
 
 </section>
+
+{{ render_pagination(mappings, 'ui.column_mapping', form=search_form, id=study_data.id) }}
 
 {% endblock %}
 
@@ -66,6 +67,22 @@
     $(document).ready(function() {
         $('[name$="mapping"]').select2({
             width: '100%',
+        });
+    
+        $('[name$="mapping"]').on('select2:select', function (e) {
+            var mapping = e.params.data['id'];
+            var study_data_column_id = $(this).data('id')
+
+            fetch("{{ url_for('ui.column_mapping_update') }}", {
+                method: 'post',
+                headers: {"Content-type": "application/json; charset=UTF-8"},
+                body: JSON.stringify({
+                    study_data_column_id: study_data_column_id,
+                    mapping: mapping,
+                }),
+            })
+            .then(standard_status_actions);
+
         });
     });
 </script>
