@@ -19,7 +19,6 @@
                 },
             ],
         ) }}
-
     </div>
 
     <ul class="list-group">
@@ -36,6 +35,12 @@
                     </div>
                     <div class="col-5">
                         <div class="btn-toolbar float-right" role="toolbar">
+                            <div class="btn-group mr-1 mb-1" role="group">
+                                <a class="automap"
+                                    title="Automap columns for study data {{ s.study_name }}"
+                                    href="{{ url_for('ui.study_data_automap', id=s.id) }}"><i class="fas fa-map-signs"></i>
+                                </a>
+                            </div>
                             <div class="btn-group mr-1 mb-1" role="group">
                                 <a class="column_mapping"
                                     title="Edit column mapping for study data {{ s.study_name }}"

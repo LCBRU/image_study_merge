@@ -1,5 +1,7 @@
 import os
 import re
+from itertools import groupby
+from unittest import result
 from flask import current_app
 from pathlib import Path
 from werkzeug.utils import secure_filename
@@ -45,6 +47,10 @@ class StudyData(AuditMixin, CommonMixin, db.Model):
     def filepath(self):
         return FileUploadDirectory.path() / secure_filename(f"{self.id}_{self.filename}")
 
+    @property
+    def unmapped_columns(self):
+        return [c for c in self.columns if not c.mapping]
+
 
 class StudyDataXlsx(StudyData):
     __mapper_args__ = {
@@ -73,6 +79,73 @@ class StudyDataCsv(StudyData):
         return CsvData(self.filepath)
 
 
+class DataDictionary(AuditMixin, CommonMixin, db.Model):
+    DO_NOT_MAP = '[Do Not Map]'
+    NO_MAPPING = '[No Mapping]'
+
+    id = db.Column(db.Integer, primary_key=True)
+    field_number = db.Column(db.Integer)
+    field_name = db.Column(db.String(100))
+    form_name = db.Column(db.String(100))
+    section_name = db.Column(db.String(100))
+    field_type = db.Column(db.String(100))
+    field_label = db.Column(db.String(100))
+    choices = db.Column(db.String(100))
+    field_note = db.Column(db.String(100))
+    text_validation_type = db.Column(db.String(100))
+    text_validation_min = db.Column(db.String(100))
+    text_validation_max = db.Column(db.String(100))
+
+    @staticmethod
+    def grouped_data_dictionary():
+        dd_items = []
+        dd_items.append(DataDictionary(
+            form_name='',
+            section_name='',
+            field_name='',
+            field_label=DataDictionary.NO_MAPPING,
+        ))
+        dd_items.append(DataDictionary(
+            form_name='',
+            section_name='',
+            field_name=DataDictionary.DO_NOT_MAP,
+            field_label=DataDictionary.DO_NOT_MAP,
+        ))
+
+        dd_items.extend(DataDictionary.query.all())
+
+        return DataDictionary.group_data_dictionary_items(dd_items)
+
+    @staticmethod
+    def group_data_dictionary_items(data_dictionary):
+        data_dictionary.sort(key=lambda dd: dd.group_name)
+
+        result = []
+        for k, g in groupby(data_dictionary, lambda dd: dd.group_name):
+            result.append({
+                'group': k,
+                'fields': [dd for dd in g],
+            })
+
+        return result
+
+    @property
+    def field_description(self):
+        return f'{self.field_label} ({self.field_name})'
+
+    @property
+    def form_name_title(self):
+        return re.sub(r"[-_]", " ", self.form_name).title()
+
+    @property
+    def group_name(self):
+        return ': '.join(filter(len, [self.form_name_title, self.section_name]))
+
+    @property
+    def full_name(self):
+        return ': '.join(filter(len, [self.group_name, self.field_label]))
+
+
 class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     column_number = db.Column(db.Integer)
@@ -81,6 +154,17 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
 
     name = db.Column(db.String(500))
     mapping = db.Column(db.String(100))
+
+    def grouped_suggestions(self):
+        return DataDictionary.group_data_dictionary_items([s.data_dictionary for s in self.suggested_mappings])
+
+
+class StudyDataColumnSuggestion(AuditMixin, CommonMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
+    study_data_column = db.relationship(StudyDataColumn, backref=db.backref("suggested_mappings", cascade="all,delete"))
+    data_dictionary_id = db.Column(db.Integer, db.ForeignKey(DataDictionary.id))
+    data_dictionary = db.relationship(DataDictionary)
 
 
 class StudyDataRow(AuditMixin, CommonMixin, db.Model):
@@ -97,26 +181,3 @@ class StudyDataRowData(AuditMixin, CommonMixin, db.Model):
     study_data_column = db.relationship(StudyDataColumn, backref=db.backref("data", cascade="all,delete"))
 
     value = db.Column(db.String(1000))
-
-
-class DataDictionary(AuditMixin, CommonMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    field_number = db.Column(db.Integer)
-    field_name = db.Column(db.String(100))
-    form_name = db.Column(db.String(100))
-    section_name = db.Column(db.String(100))
-    field_type = db.Column(db.String(100))
-    field_label = db.Column(db.String(100))
-    choices = db.Column(db.String(100))
-    field_note = db.Column(db.String(100))
-    text_validation_type = db.Column(db.String(100))
-    text_validation_min = db.Column(db.String(100))
-    text_validation_max = db.Column(db.String(100))
-
-    @property
-    def form_name_title(self):
-        return re.sub(r"[-_]", " ", self.form_name).title()
-
-    @property
-    def group_name(self):
-        return ': '.join([self.form_name_title, self.section_name])

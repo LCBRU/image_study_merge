@@ -23,36 +23,62 @@
 
     </div>
 
-    <form action="{{ url_for('ui.column_mapping_save', id=study_data.id) }}" method="POST" class="form panel-body" enctype="multipart/form-data">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th scope="col" class="w-auto">#</th>
-                    <th scope="col" class="w-50">Source</th>
-                    <th scope="col" class="w-50">Destination</th>
-                </tr>
-            </thead>
-            <tbody>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col" class="w-auto">#</th>
+                <th scope="col" class="w-50">Source</th>
+                <th scope="col" class="w-50">Destination</th>
+            </tr>
+        </thead>
+        <tbody>
 
-                    {{ mapping_form.hidden_tag() }}
-
-                    {% for f in mapping_form.fields %}
+                {% for m in mappings.items %}
+                    <tr>
+                        <th scope="row">{{ m.column_number }}</th>
+                        <td>{{ m.name }}</td>
+                        <td>
+                            <div class="form-group">
+                                <select class="form-control" name="mapping" id="mapping-{{ m.id }}" data-id="{{ m.id }}">
+                                    {% for g in data_dictionary_options %}
+                                        <optgroup label="{{ g['group'] }}">
+                                            {% for o in g['fields'] %}
+                                                <option value="{{ o.field_name }}" {% if o.field_name == m.mapping %}selected{% endif %}>{{ o.field_label }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </td>
+                    </tr>
+                    {% if m.grouped_suggestions() | length > 0 %}
                         <tr>
-                            <th scope="row">{{ f['column_number']._value() }}</th>
-                            <td>
-                                {{ f['name']._value() }}
-                            </td>
-                            <td>
-                                <div class="form-group{% if f['mapping'].errors %} has-error{%endif%}">
-                                    {{ render_field_actual(f['mapping'], **{'data-id': f['id']._value()}) }}
-                                </div>
+                            <th scope="row" class="border-top-0"></th>
+                            <td colspan="2" class="border-top-0">
+                                <i>Suggestions:</i>
+                                {% for g in m.grouped_suggestions() %}
+                                    <p>{{ g['group'] }}</p>
+
+                                    <ul>
+                                        {% for f in g['fields'] %}
+                                            <li class="mb-1">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-primary"
+                                                    name="suggested_mapping"
+                                                    data-id="{{ m.id }}"
+                                                    data-mapping="{{ f.field_name }}"
+                                                    >{{ f.field_description }}</button>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endfor %}
                             </td>
                         </tr>
-                    {% endfor %}
-
-            </tbody>
-        </table>
-    </form>
+                    {% endif %}
+                {% endfor %}
+        </tbody>
+    </table>
 
 </section>
 
@@ -64,16 +90,8 @@
 {% block js %}
 
 <script type="text/javascript">
-    $(document).ready(function() {
-        $('[name$="mapping"]').select2({
-            width: '100%',
-        });
-    
-        $('[name$="mapping"]').on('select2:select', function (e) {
-            var mapping = e.params.data['id'];
-            var study_data_column_id = $(this).data('id')
-
-            fetch("{{ url_for('ui.column_mapping_update') }}", {
+    function update_column_mapping(mapping, study_data_column_id) {
+        fetch("{{ url_for('ui.column_mapping_update') }}", {
                 method: 'post',
                 headers: {"Content-type": "application/json; charset=UTF-8"},
                 body: JSON.stringify({
@@ -82,7 +100,25 @@
                 }),
             })
             .then(standard_status_actions);
+    }
 
+    $(document).ready(function() {
+        $('[name="mapping"]').select2({
+            width: '100%',
+        });
+    
+        $('[name="mapping"]').on('select2:select', function (e) {
+            var mapping = e.params.data['id'];
+            var study_data_column_id = $(this).data('id')
+
+            update_column_mapping(mapping, study_data_column_id);
+        });
+
+        $('[name="suggested_mapping"]').on('click', function (e) {
+            var mapping = $(this).data('mapping');
+            var study_data_column_id = $(this).data('id');
+
+            update_column_mapping(mapping, study_data_column_id);
         });
     });
 </script>

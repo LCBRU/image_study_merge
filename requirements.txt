@@ -4,3 +4,4 @@ Flask
 sqlalchemy-migrate
 pymysql
 wtforms_components
+nltk
