@@ -3,4 +3,7 @@
 
 {% block navlinks %}
     {{ render_nav_item('ui.data_dictionary', 'Data Dictionary') }}
+    {% if current_user.is_admin %}
+        {{ render_nav_item('ui.data_dictionary_upload', 'Upload Data Dictionary') }}
+    {% endif %}
 {% endblock %}

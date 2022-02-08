@@ -49,7 +49,11 @@ class StudyData(AuditMixin, CommonMixin, db.Model):
 
     @property
     def unmapped_columns(self):
-        return [c for c in self.columns if not c.mapping]
+        return [c for c in self.columns if not c.mapped_data_dictionary]
+
+    @property
+    def mapped_columns(self):
+        return [c for c in self.columns if c.mapped_data_dictionary]
 
 
 class StudyDataXlsx(StudyData):
@@ -118,8 +122,6 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
 
     @staticmethod
     def group_data_dictionary_items(data_dictionary):
-        data_dictionary.sort(key=lambda dd: dd.group_name)
-
         result = []
         for k, g in groupby(data_dictionary, lambda dd: dd.group_name):
             result.append({
@@ -145,6 +147,22 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
     def full_name(self):
         return ': '.join(filter(len, [self.group_name, self.field_label]))
 
+    @property
+    def has_choices(self):
+        return self.field_type in {'yesno', 'radio', 'dropdown', 'checkbox'}
+
+    @property
+    def choice_values(self):
+        if self.field_type in {'radio', 'dropdown', 'checkbox'}:
+            return {o.split(',')[0].strip(): o.split(',')[1].strip() for o in self.choices.split('|')}
+        elif self.field_type == 'yesno':
+            return {
+                '0': 'no',
+                '1': 'yes',
+            }
+        else:
+            return {}
+
 
 class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -153,14 +171,34 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete"))
 
     name = db.Column(db.String(500))
-    mapping = db.Column(db.String(100))
+    mapping = db.Column(db.String(100), db.ForeignKey(DataDictionary.field_name))
 
-    def grouped_suggestions(self):
-        return DataDictionary.group_data_dictionary_items([s.data_dictionary for s in self.suggested_mappings])
+    mapped_data_dictionary = db.relationship(DataDictionary)
+
+    def unique_data_value(self):
+        return {d.value for d in self.data if d.value}
+
+    @property
+    def mapped_values(self):
+        return [v for v in self.value_mappings if v.mapping]
+
+    @property
+    def unmapped_values(self):
+        return [v for v in self.value_mappings if not v.mapping]
+
+
+class StudyDataColumnValueMapping(AuditMixin, CommonMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
+    study_data_column = db.relationship(StudyDataColumn, backref=db.backref("value_mappings", cascade="all,delete"))
+
+    value = db.Column(db.String(100))
+    mapping = db.Column(db.String(100))
 
 
 class StudyDataColumnSuggestion(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    match_score = db.Column(db.Integer)
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
     study_data_column = db.relationship(StudyDataColumn, backref=db.backref("suggested_mappings", cascade="all,delete"))
     data_dictionary_id = db.Column(db.Integer, db.ForeignKey(DataDictionary.id))

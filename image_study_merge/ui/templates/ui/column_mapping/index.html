@@ -23,12 +23,13 @@
 
     </div>
 
-    <table class="table table-hover">
+    <table class="table">
         <thead>
             <tr>
                 <th scope="col" class="w-auto">#</th>
                 <th scope="col" class="w-50">Source</th>
                 <th scope="col" class="w-50">Destination</th>
+                <th scope="col" class="w-auto"></th>
             </tr>
         </thead>
         <tbody>
@@ -36,7 +37,16 @@
                 {% for m in mappings.items %}
                     <tr>
                         <th scope="row">{{ m.column_number }}</th>
-                        <td>{{ m.name }}</td>
+                        <td>
+                            <span>{{ m.name }}</span>
+                            <a class=""
+                                data-toggle="modal"
+                                title="View data sample for {{ m.name }}"
+                                data-id="{{ m.id }}"
+                                data-name="{{ m.name }}"
+                                data-target="#sourceSampleModal"
+                                href="#"><i class="far fa-eye"></i></a>
+                        </td>
                         <td>
                             <div class="form-group">
                                 <select class="form-control" name="mapping" id="mapping-{{ m.id }}" data-id="{{ m.id }}">
@@ -50,31 +60,61 @@
                                 </select>
                             </div>
                         </td>
+                        <td>
+                            {% if m.mapped_data_dictionary.has_choices %}
+                                <a
+                                    class="btn btn-primary mb-1"
+                                    title="Map column values"
+                                    href="{{ url_for('ui.value_mapping', id=m.id, prev=request.full_path) }}">
+                                        <i class="fas fa-list"></i> Map Values ({{ m.mapped_values | length }} / {{ m.value_mappings | length }})</a>
+                            {% endif %}
+                        </td>
                     </tr>
-                    {% if m.grouped_suggestions() | length > 0 %}
-                        <tr>
-                            <th scope="row" class="border-top-0"></th>
-                            <td colspan="2" class="border-top-0">
-                                <i>Suggestions:</i>
-                                {% for g in m.grouped_suggestions() %}
-                                    <p>{{ g['group'] }}</p>
-
-                                    <ul>
-                                        {% for f in g['fields'] %}
-                                            <li class="mb-1">
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-primary"
-                                                    name="suggested_mapping"
-                                                    data-id="{{ m.id }}"
-                                                    data-mapping="{{ f.field_name }}"
-                                                    >{{ f.field_description }}</button>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endfor %}
-                            </td>
-                        </tr>
+                    {% if m.suggested_mappings | length > 0 %}
+                        {% if show_suggestions == '2' or (show_suggestions == '1' and not m.mapping) %}
+                            <tr>
+                                <th scope="row" class="border-top-0"></th>
+                                <td colspan="2" class="border-top-0">
+                                    <i>
+                                        <a data-toggle="collapse" href="#suggestions_{{ m.id }}" role="button" aria-expanded="false" aria-controls="suggestions_{{ m.id }}">
+                                            Suggestions (closest matches first)
+                                        </a>
+                                    </i>
+                                    <div class="collapse" id="suggestions_{{ m.id }}">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" class="w-25">Section</th>
+                                                    <th scope="col" class="w-50">Name</th>
+                                                    <th scope="col" class="w-25">Type</th>
+                                                    <th scope="col" class="w-auto">Score</th>
+                                                    <th scope="col" class="w-auto"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for s in m.suggested_mappings | sort(attribute='match_score', reverse = True) %}
+                                                    <tr>
+                                                        <td>{{ s.data_dictionary.group_name }}</td>
+                                                        <td>{{ s.data_dictionary.field_description }}</td>
+                                                        <td>{{ s.data_dictionary.field_type }}</td>
+                                                        <td>{{ s.match_score }}</td>
+                                                        <td>
+                                                            <button
+                                                            type="button"
+                                                            class="btn btn-primary mb-1"
+                                                            name="suggested_mapping"
+                                                            data-id="{{ m.id }}"
+                                                            data-mapping="{{ s.data_dictionary.field_name }}"
+                                                            >Use</button>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
                     {% endif %}
                 {% endfor %}
         </tbody>
@@ -83,6 +123,11 @@
 </section>
 
 {{ render_pagination(mappings, 'ui.column_mapping', form=search_form, id=study_data.id) }}
+
+{% call render_modal('sourceSampleModal', 'Source Sample') %}
+    <p id="modal_description">A maximum of 20 unique sample values from the column <span id="name"></span>.</p>
+    <ul id="samples"></ul>
+{% endcall %}
 
 {% endblock %}
 
@@ -120,6 +165,37 @@
 
             update_column_mapping(mapping, study_data_column_id);
         });
+
+        $('#sourceSampleModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var modal = $(this);
+
+            modal.find('#name').text(button.data('name'));
+            var study_data_column_id =button.data('id');
+
+            document.querySelectorAll('#sourceSampleModal ul#samples li').forEach((e) => {
+                e.remove();
+            });
+
+            response = fetch("{{ url_for('ui.column_mapping_source_sample') }}", {
+                method: 'post',
+                headers: {"Content-type": "application/json; charset=UTF-8"},
+                body: JSON.stringify({
+                    study_data_column_id: study_data_column_id,
+                }),
+            })
+            .then(standard_status_actions)
+            .then(function(response) {
+                response.json().then(function(data) {
+                    data['samples'].forEach((sample) => {
+                        var sample_li = document.createElement("li");
+                        sample_li.appendChild(document.createTextNode(sample));
+                        document.getElementById("samples").appendChild(sample_li);
+                    })
+                })
+            });
+        });
+
     });
 </script>
 

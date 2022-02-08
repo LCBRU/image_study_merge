@@ -1,7 +1,7 @@
 from .. import blueprint
 from flask import render_template, request, flash, redirect, url_for, send_file
 from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm
-from image_study_merge.services import automap, extract_study_data
+from image_study_merge.services import automap, delete_mappings, extract_study_data
 from image_study_merge.model import StudyData, study_data_factory
 from flask_wtf.file import FileRequired
 from lbrc_flask.database import db
@@ -93,6 +93,17 @@ def study_data_delete():
         sd = StudyData.query.get_or_404(form.id.data)
         db.session.delete(sd)
         db.session.commit()
+
+    return redirect(url_for('ui.index'))
+
+
+@blueprint.route("/study_data/delete_mappings", methods=['POST'])
+def study_data_delete_mappings():
+    form = ConfirmForm()
+
+    if form.validate_on_submit():
+        sd = StudyData.query.get_or_404(form.id.data)
+        delete_mappings(sd)
 
     return redirect(url_for('ui.index'))
 

@@ -8,58 +8,56 @@
     <div class="page-header">
         <h1>Data Dictionary</h1>
 
-        {{ render_search(
-            search_form,
-            'ui.index',
-            placeholder='enter search text - searches column name',
-            buttons=[
-                {
-                    'text': 'Upload',
-                    'endpoint': 'ui.data_dictionary_upload',
-                },
-            ],
-        ) }}
-
+        <ul class="nav nav-pills nav-fill">
+            {% for name, title in forms.items() %}
+                <li class="nav-item">
+                    <a class="nav-link{% if name == form_name %} active{% endif %}" href="{{ url_for('ui.data_dictionary', form_name=name) }}">{{ title }}</a>
+                </li>
+            {% endfor %}
+        </ul>
     </div>
 
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Form Name</th>
-                <th scope="col">Section Name</th>
-                <th scope="col">Name</th>
-                <th scope="col">Label</th>
-                <th scope="col">Type</th>
-                <th scope="col">Choices</th>
-                <th scope="col">Notes</th>
-                <th scope="col">Validation</th>
-                <th scope="col">Min</th>
-                <th scope="col">Max</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for d in data_dictionary.items %}
+    {% for section_name, fields in data_dictionary | groupby('section_name') %}
+        <h1>{{ section_name }}</h1>
+        <table class="table table-hover">
+            <thead>
                 <tr>
-                    <th scope="row">{{ d.field_number }}</th>
-                    <td>{{ d.form_name }}</td>
-                    <td>{{ d.section_name }}</td>
-                    <td>{{ d.field_name }}</td>
-                    <td>{{ d.field_label }}</td>
-                    <td>{{ d.field_type }}</td>
-                    <td>{{ d.choices }}</td>
-                    <td>{{ d.field_note }}</td>
-                    <td>{{ d.text_validation_type }}</td>
-                    <td>{{ d.text_validation_min }}</td>
-                    <td>{{ d.text_validation_max }}</td>
+                    <th scope="col">Name</th>
+                    <th scope="col">Label</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Choices</th>
+                    <th scope="col">Notes</th>
+                    <th scope="col">Validation</th>
+                    <th scope="col">Min</th>
+                    <th scope="col">Max</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for d in fields %}
+                    <tr>
+                        <td>{{ d.field_name }}</td>
+                        <td>{{ d.field_label }}</td>
+                        <td>{{ d.field_type }}</td>
+                        <td>
+                            {% if d.choice_values | length > 0 %}
+                                <ul>
+                                    {% for c_value, c_name in d.choice_values.items() %}
+                                        <li>{{ c_name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </td>
+                        <td>{{ d.field_note }}</td>
+                        <td>{{ d.text_validation_type }}</td>
+                        <td>{{ d.text_validation_min }}</td>
+                        <td>{{ d.text_validation_max }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
 
 </section>
-
-{{ render_pagination(data_dictionary, 'ui.data_dictionary', form=search_form) }}
 
 {% endblock %}
 

@@ -1,12 +1,14 @@
-from flask import flash, redirect, render_template, request, url_for
+import re
+from flask import flash, redirect, render_template, url_for
 from image_study_merge.model import DataDictionary, FileUploadDirectory
-from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm
+from lbrc_flask.forms import FlashingForm, FileField, ConfirmForm
 from flask_wtf.file import FileRequired
 from werkzeug.utils import secure_filename
 from .. import blueprint
 from datetime import datetime
 from lbrc_flask.column_data import CsvData
 from lbrc_flask.database import db
+from lbrc_flask.security import must_be_admin
 
 
 class UploadDataDictionaryForm(FlashingForm):
@@ -17,30 +19,34 @@ class UploadDataDictionaryForm(FlashingForm):
     )
 
 
+@blueprint.route("/data_dictionary/<string:form_name>")
 @blueprint.route("/data_dictionary")
-def data_dictionary():
-    search_form = SearchForm(formdata=request.args)
+def data_dictionary(form_name=None):
+    forms = {f[0]: re.sub(r"[-_]", " ", f[0]).title() for f in DataDictionary.query
+        .with_entities(DataDictionary.form_name.distinct())
+        .all()
+    }
 
-    q = DataDictionary.query
+    if not form_name and forms:
+        form_name = list(forms.keys())[0]
 
-    if search_form.search.data:
-        q = q.filter(DataDictionary.field_label.like(f'%{search_form.search.data}%'))
-
-    data_dictionary = q.paginate(
-        page=search_form.page.data,
-        per_page=5,
-        error_out=False,
+    data_dictionary = (DataDictionary.query
+        .filter(DataDictionary.form_name == form_name)
+        .order_by(DataDictionary.field_number)
+        .all()
     )
 
     return render_template(
         "ui/data_dictionary/index.html",
+        forms=forms,
         data_dictionary=data_dictionary,
-        search_form=search_form,
         confirm_form=ConfirmForm(),
+        form_name=form_name,
     )
 
 
 @blueprint.route("/data_dictionary/upload", methods=['GET', 'POST'])
+@must_be_admin()
 def data_dictionary_upload():
     form = UploadDataDictionaryForm()
 

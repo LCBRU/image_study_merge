@@ -1,5 +1,6 @@
 __all__ = [
     "study_data",
-    "mapping",
+    "column_mapping",
     "data_dictionary",
+    "value_mapping",
 ]

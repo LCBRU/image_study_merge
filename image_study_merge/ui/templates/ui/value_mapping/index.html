@@ -1,0 +1,88 @@
+{% extends "ui/page.html" %}
+{% from "lbrc_flask/form_macros.html" import render_search, render_button_bar, render_field_actual, render_pagination %}
+{% from "lbrc_flask/modal_macros.html" import render_modal %}
+
+{% block content %}
+
+<section>
+    <div class="page-header">
+        <h1>Value Mappings for column {{study_data_column.name}} for Study Data '{{ study_data_column.study_data.study_name }}'</h1>
+
+        {{ render_search(
+            search_form,
+            'ui.value_mapping',
+            placeholder='enter search text - searches value',
+            buttons=[
+                {
+                    'text': 'Back',
+                    'url': previous_page,
+                },
+            ],
+            id=study_data_column.id,
+        ) }}
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col" class="w-50">Source</th>
+                <th scope="col" class="w-50">Destination</th>
+            </tr>
+        </thead>
+        <tbody>
+
+                {% for vm in mappings.items %}
+                    <tr>
+                        <td>{{ vm.value }}</td>
+                        <td>
+                            <div class="form-group">
+                                <select class="form-control" name="mapping" id="mapping-{{ vm.id }}" data-id="{{vm.id}}">
+                                    {% for value, name in choices.items() %}
+                                        <option value="{{ value }}" {% if value == vm.mapping %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+
+</section>
+
+{{ render_pagination(mappings, 'ui.value_mapping', form=search_form, id=study_data_column.id) }}
+
+{% endblock %}
+
+
+{% block js %}
+
+<script type="text/javascript">
+    function update_value_mapping(id, mapping) {
+        fetch("{{ url_for('ui.value_mapping_update') }}", {
+                method: 'post',
+                headers: {"Content-type": "application/json; charset=UTF-8"},
+                body: JSON.stringify({
+                    id: id,
+                    mapping: mapping,
+                }),
+            })
+            .then(standard_status_actions);
+    }
+
+    $(document).ready(function() {
+        $('[name="mapping"]').select2({
+            width: '100%',
+        });
+    
+        $('[name="mapping"]').on('select2:select', function (e) {
+            var mapping = e.params.data['id'];
+            var id = $(this).data('id')
+
+            update_value_mapping(id, mapping);
+        });
+
+    });
+</script>
+
+{% endblock %}

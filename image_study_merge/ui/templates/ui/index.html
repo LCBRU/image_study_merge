@@ -25,37 +25,45 @@
         {% for s in study_datas.items %}
             <li class="list-group-item summary_details">
                 <div class='row'>
-                    <div class="col-7">
+                    <div class="col-6">
                         <div>
                             <header>
-                                <h1>{{s.study_name}}</h1>
+
+                                <h1>
+                                    <a class="study_data_delete"
+                                        data-toggle="modal"
+                                        title="Delete study data {{ s.study_name }}"
+                                        data-id="{{ s.id }}"
+                                        data-name="{{ s.study_name }}"
+                                        data-target="#deleteModal"
+                                        href="#"><i class="fas fa-trash"></i>
+                                    </a>
+                                    {{s.study_name}}
+                                </h1>
                                 <h2><a href="{{ url_for('ui.study_data_download', id=s.id) }}">{{s.filename}}</a> uploaded {{s.created_date | datetime_humanize}}</h2>
                             </header>
                         </div>
                     </div>
-                    <div class="col-5">
+                    <div class="col-6">
                         <div class="btn-toolbar float-right" role="toolbar">
                             <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="automap"
+                                <a class="btn btn-primary mb-1 lock_screen"
                                     title="Automap columns for study data {{ s.study_name }}"
-                                    href="{{ url_for('ui.study_data_automap', id=s.id) }}"><i class="fas fa-map-signs"></i>
-                                </a>
+                                    href="{{ url_for('ui.study_data_automap', id=s.id) }}"><i class="fas fa-random"></i> Automap</a>
                             </div>
                             <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="column_mapping"
+                                <a class="btn btn-primary mb-1"
                                     title="Edit column mapping for study data {{ s.study_name }}"
-                                    href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-random"></i>
-                                </a>
+                                    href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-map-signs"></i><span> Mappings ({{ s.mapped_columns | length }}/{{ s.columns | length }})</span></a>
                             </div>
                             <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="study_data_delete"
+                                <a class="btn btn-primary mb-1"
                                     data-toggle="modal"
-                                    title="Delete study data {{ s.study_name }}"
+                                    title="Delete mappings for {{ s.study_name }}"
                                     data-id="{{ s.id }}"
                                     data-name="{{ s.study_name }}"
-                                    data-target="#deleteModal"
-                                    href="#"><i class="fas fa-trash"></i>
-                                </a>
+                                    data-target="#deleteMappingsModal"
+                                    href="#"><i class="fas fa-times"></i> Delete Mappings</a>
                             </div>
                         </div>
                     </div>
@@ -79,6 +87,16 @@
     </form>
 {% endcall %}
 
+{% call render_modal('deleteMappingsModal', 'Delete Study Data Mappings') %}
+    <p id="modal_description">Please confirm that you wish to delete the mappings for <span id="name"></span>.</p>
+    <form id="delete_form" action="{{ url_for('ui.study_data_delete_mappings', prev=request.full_path) }}" method="POST" enctype="multipart/form-data">
+        <fieldset>
+            {{ confirm_form.hidden_tag() }}
+
+            {{ render_button_bar(cancel_url=request.full_path, submit_label="Delete") }}
+        </fieldset>
+    </form>
+{% endcall %}
 
 {% endblock %}
 
@@ -87,6 +105,14 @@
 <script>
     $(document).ready(function(){
         $('#deleteModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var modal = $(this);
+
+            modal.find('#name').text(button.data('name'));
+            modal.find("#id").val(button.data('id'));
+        });
+
+        $('#deleteMappingsModal').on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget);
             var modal = $(this);
 
