@@ -1,0 +1,8 @@
+requests
+-e git+https://github.com/LCBRU/lbrc_flask.git@main#egg=lbrc_flask
+Flask
+sqlalchemy-migrate
+pymysql
+wtforms_components
+nltk
+pymysql
