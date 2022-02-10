@@ -157,8 +157,11 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
             result = {}
 
             for c in self.choices.split('|'):
-                value, name = c.split(',')
-                result[value.strip()] = (name or '').strip()
+                if len(c.split(',')) > 1:
+                    value, name = c.split(',')
+                    result[value.strip()] = (name or '').strip()
+                else:
+                    print(c)
             
             return result
 
