@@ -188,7 +188,7 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     mapped_data_dictionary = db.relationship(DataDictionary)
 
     def unique_data_value(self):
-        return {d.value.lower() for d in self.data if d.value}
+        return {(d.value or '').lower().strip() for d in self.data if d.value}
 
     @property
     def mapped_values(self):
