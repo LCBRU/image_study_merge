@@ -65,7 +65,7 @@
                                 <a
                                     class="btn btn-primary mb-1"
                                     title="Map column values"
-                                    href="{{ url_for('ui.value_mapping', id=m.id, prev=request.full_path) }}">
+                                    href="{{ url_for('ui.value_mapping', id=m.id, prev=request.url) }}">
                                         <i class="fas fa-list"></i> Map Values ({{ m.mapped_values | length }} / {{ m.value_mappings | length }})</a>
                             {% endif %}
                         </td>

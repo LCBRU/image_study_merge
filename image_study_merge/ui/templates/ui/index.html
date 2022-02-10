@@ -88,22 +88,22 @@
 
 {% call render_modal('deleteModal', 'Delete Study Data') %}
     <p id="modal_description">Please confirm that you wish to delete <span id="name"></span>.</p>
-    <form id="delete_form" action="{{ url_for('ui.study_data_delete', prev=request.full_path) }}" method="POST" enctype="multipart/form-data">
+    <form id="delete_form" action="{{ url_for('ui.study_data_delete', prev=request.url) }}" method="POST" enctype="multipart/form-data">
         <fieldset>
             {{ confirm_form.hidden_tag() }}
 
-            {{ render_button_bar(cancel_url=request.full_path, submit_label="Delete") }}
+            {{ render_button_bar(cancel_url=request.url, submit_label="Delete") }}
         </fieldset>
     </form>
 {% endcall %}
 
 {% call render_modal('deleteMappingsModal', 'Delete Study Data Mappings') %}
     <p id="modal_description">Please confirm that you wish to delete the mappings for <span id="name"></span>.</p>
-    <form id="delete_form" action="{{ url_for('ui.study_data_delete_mappings', prev=request.full_path) }}" method="POST" enctype="multipart/form-data">
+    <form id="delete_form" action="{{ url_for('ui.study_data_delete_mappings', prev=request.url) }}" method="POST" enctype="multipart/form-data">
         <fieldset>
             {{ confirm_form.hidden_tag() }}
 
-            {{ render_button_bar(cancel_url=request.full_path, submit_label="Delete") }}
+            {{ render_button_bar(cancel_url=request.url, submit_label="Delete") }}
         </fieldset>
     </form>
 {% endcall %}
