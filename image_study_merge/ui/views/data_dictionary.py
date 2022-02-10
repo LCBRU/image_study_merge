@@ -1,3 +1,4 @@
+from itertools import groupby
 import re
 from flask import flash, redirect, render_template, url_for
 from image_study_merge.model import DataDictionary, FileUploadDirectory
@@ -36,10 +37,15 @@ def data_dictionary(form_name=None):
         .all()
     )
 
+    sections = {}
+
+    for section_name, fields in groupby(data_dictionary, key= lambda f: f.section_name):
+        sections[section_name] = list(fields)
+
     return render_template(
         "ui/data_dictionary/index.html",
         forms=forms,
-        data_dictionary=data_dictionary,
+        sections=sections,
         confirm_form=ConfirmForm(),
         form_name=form_name,
     )
@@ -60,28 +66,33 @@ def data_dictionary_upload():
         DataDictionary.query.delete()
 
         section_name = ''
+        i = 0
 
-        for i, field in enumerate(csv.iter_rows(), 1):
-            dd = DataDictionary()
+        for form_name, fields in groupby(csv.iter_rows(), key=lambda f: f.get('Form Name')):
+            section_name = ''
 
-            dd.field_number = i
-            dd.field_name = field.get('Variable / Field Name')
-            dd.form_name = field.get('Form Name')
+            for field in fields:
+                i += 1
 
-            if field.get('Section Header'):
-                section_name = field.get('Section Header')
+                dd = DataDictionary()
 
-            dd.section_name = section_name
+                dd.field_number = i
+                dd.field_name = field.get('Variable / Field Name')
+                dd.form_name = form_name
 
-            dd.field_type = field.get('Field Type')
-            dd.field_label = field.get('Field Label')
-            dd.choices = field.get('Choices, Calculations, OR Slider Labels')
-            dd.field_note = field.get('Field Note')
-            dd.text_validation_type = field.get('Text Validation Type OR Show Slider Number')
-            dd.text_validation_min = field.get('Text Validation Min')
-            dd.text_validation_max = field.get('Text Validation Max')
+                if field.get('Section Header'):
+                    section_name = field.get('Section Header')
 
-            db.session.add(dd)
+                dd.section_name = section_name
+                dd.field_type = field.get('Field Type')
+                dd.field_label = field.get('Field Label')
+                dd.choices = field.get('Choices, Calculations, OR Slider Labels')
+                dd.field_note = field.get('Field Note')
+                dd.text_validation_type = field.get('Text Validation Type OR Show Slider Number')
+                dd.text_validation_min = field.get('Text Validation Min')
+                dd.text_validation_max = field.get('Text Validation Max')
+
+                db.session.add(dd)
 
         db.session.commit()
 

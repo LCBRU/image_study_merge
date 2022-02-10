@@ -150,7 +150,7 @@ def extract_study_data_rows(study_data):
         row = StudyDataRow(study_data_id=study_data.id)
         rows.append(row)
 
-        for column_name, value in r:
+        for column_name, value in r.items():
             column_data.append(
                 StudyDataRowData(
                     study_data_row=row,
