@@ -154,7 +154,14 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
     @property
     def choice_values(self):
         if self.field_type in {'radio', 'dropdown', 'checkbox'}:
-            return {o.split(',')[0].strip(): o.split(',')[1].strip() for o in self.choices.split('|')}
+            result = {}
+
+            for c in self.choices.split('|'):
+                value, name = c.split(',')
+                result[value.strip()] = (name or '').strip()
+            
+            return result
+
         elif self.field_type == 'yesno':
             return {
                 '0': 'no',
