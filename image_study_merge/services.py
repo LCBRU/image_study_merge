@@ -1,10 +1,11 @@
 from collections import Counter
 import re
 import nltk
+from flask import current_app
 from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn, StudyDataColumnSuggestion, StudyDataColumnValueMapping, StudyDataRow, StudyDataRowData
 from lbrc_flask.database import db
-from itertools import chain
 from nltk.corpus import stopwords
+from lbrc_flask.celery import celery
 
 
 thesaurus = [
@@ -118,16 +119,31 @@ units = {
     'perc',
 }
 
-
 def extract_study_data(study_data_id):
+    study_data = StudyData.query.get(study_data_id)
+    study_data.updating = True
+    db.session.add(study_data)
+    db.session.commit()
+
+    _extract_study_data.delay(study_data_id)
+
+
+@celery.task()
+def _extract_study_data(study_data_id):
     study_data = StudyData.query.get(study_data_id)
 
     extract_study_data_columns(study_data)
     extract_study_data_rows(study_data)
     extract_study_data_values(study_data)
 
+    study_data = StudyData.query.get(study_data_id)
+    study_data.updating = False
+    db.session.add(study_data)
+    db.session.commit()
+
 
 def extract_study_data_columns(study_data):
+    current_app.logger.info('extract_study_data_columns: Started')
     columns = [
         StudyDataColumn(
             column_number=i,
@@ -139,8 +155,12 @@ def extract_study_data_columns(study_data):
     db.session.add_all(columns)
     db.session.commit()
 
+    current_app.logger.info('extract_study_data_columns: Completed')
+
 
 def extract_study_data_rows(study_data):
+    current_app.logger.info('extract_study_data_rows: Started')
+
     columns = {c.name:c for c in study_data.columns}
 
     column_data = []
@@ -163,8 +183,12 @@ def extract_study_data_rows(study_data):
     db.session.add_all(column_data)
     db.session.commit()
 
+    current_app.logger.info('extract_study_data_rows: Completed')
+
 
 def extract_study_data_values(study_data):
+    current_app.logger.info('extract_study_data_values: Started')
+
     values = []
 
     for c in study_data.columns:
@@ -177,8 +201,22 @@ def extract_study_data_values(study_data):
     db.session.add_all(values)
     db.session.commit()
 
+    current_app.logger.info('extract_study_data_values: Completed')
 
-def delete_mappings(study_data):
+
+def delete_mappings(study_data_id):
+    study_data = StudyData.query.get(study_data_id)
+    study_data.updating = True
+    db.session.add(study_data)
+    db.session.commit()
+
+    _delete_mappings.delay(study_data_id)
+
+
+@celery.task()
+def _delete_mappings(study_data_id):
+    study_data = StudyData.query.get(study_data_id)
+
     columns = []
     value_mappings = []
 
@@ -196,8 +234,41 @@ def delete_mappings(study_data):
     db.session.add_all(value_mappings)
     db.session.commit()
 
+    study_data = StudyData.query.get(study_data_id)
+    study_data.updating = False
+    db.session.add(study_data)
+    db.session.commit()
 
-def automap(study_data):
+
+def delete_study_data(study_data_id):
+    study_data = StudyData.query.get(study_data_id)
+    study_data.deleted = True
+    db.session.add(study_data)
+    db.session.commit()
+
+    _delete_study_data.delay(study_data_id)
+
+
+@celery.task()
+def _delete_study_data(study_data_id):
+    study_data = StudyData.query.get(study_data_id)
+
+    db.session.delete(study_data)
+    db.session.commit()
+
+def automap(study_data_id):
+    study_data = StudyData.query.get(study_data_id)
+    study_data.updating = True
+    db.session.add(study_data)
+    db.session.commit()
+
+    _automap.delay(study_data_id)
+
+
+@celery.task()
+def _automap(study_data_id):
+    study_data = StudyData.query.get(study_data_id)
+
     data_dictionary = DataDictionary.query.all()
 
     automap_column__do_not_map(study_data, data_dictionary)
@@ -206,6 +277,11 @@ def automap(study_data):
     automap_column__match_by_name(study_data, data_dictionary)
 
     automap_values__map_exact_name(study_data)
+
+    study_data = StudyData.query.get(study_data_id)
+    study_data.updating = False
+    db.session.add(study_data)
+    db.session.commit()
 
 
 def automap_column__match_by_name(study_data, data_dictionary):

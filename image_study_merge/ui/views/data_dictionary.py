@@ -68,6 +68,8 @@ def data_dictionary_upload():
         section_name = ''
         i = 0
 
+        new_items = []
+
         for form_name, fields in groupby(csv.iter_rows(), key=lambda f: f.get('Form Name')):
             section_name = ''
 
@@ -92,8 +94,9 @@ def data_dictionary_upload():
                 dd.text_validation_min = field.get('Text Validation Min')
                 dd.text_validation_max = field.get('Text Validation Max')
 
-                db.session.add(dd)
+                new_items.append(dd)
 
+        db.session.add_all(new_items)
         db.session.commit()
 
         flash('Data Dictionary Uploaded')

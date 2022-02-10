@@ -6,3 +6,4 @@ pymysql
 wtforms_components
 nltk
 pymysql
+celery==4.4.2

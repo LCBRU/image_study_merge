@@ -28,9 +28,15 @@
                     <div class="col-6">
                         <div>
                             <header>
+                                {% if s.updating %}
+                                    {% set disabled = 'disabled' %}
+                                    {% set reload = 'yes' %}
+                                {% else %}
+                                    {% set disabled = '' %}
+                                {% endif %}
 
                                 <h1>
-                                    <a class="study_data_delete"
+                                    <a class="btn {{ disabled }}"
                                         data-toggle="modal"
                                         title="Delete study data {{ s.study_name }}"
                                         data-id="{{ s.id }}"
@@ -39,6 +45,10 @@
                                         href="#"><i class="fas fa-trash"></i>
                                     </a>
                                     {{s.study_name}}
+                                    {% if s.updating %}
+                                        <span class="badge badge-warning">Updating <span class="inline_loader"></span></span>
+                                        
+                                    {% endif %}
                                 </h1>
                                 <h2><a href="{{ url_for('ui.study_data_download', id=s.id) }}">{{s.filename}}</a> uploaded {{s.created_date | datetime_humanize}}</h2>
                             </header>
@@ -47,17 +57,17 @@
                     <div class="col-6">
                         <div class="btn-toolbar float-right" role="toolbar">
                             <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="btn btn-primary mb-1 lock_screen"
+                                <a class="btn btn-primary mb-1 lock_screen {{ disabled }}"
                                     title="Automap columns for study data {{ s.study_name }}"
                                     href="{{ url_for('ui.study_data_automap', id=s.id) }}"><i class="fas fa-random"></i> Automap</a>
                             </div>
                             <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="btn btn-primary mb-1"
+                                <a class="btn btn-primary mb-1 {{ disabled }}"
                                     title="Edit column mapping for study data {{ s.study_name }}"
                                     href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-map-signs"></i><span> Mappings ({{ s.mapped_columns | length }}/{{ s.columns | length }})</span></a>
                             </div>
                             <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="btn btn-primary mb-1"
+                                <a class="btn btn-primary mb-1 {{ disabled }}"
                                     data-toggle="modal"
                                     title="Delete mappings for {{ s.study_name }}"
                                     data-id="{{ s.id }}"
@@ -120,5 +130,7 @@
             modal.find("#id").val(button.data('id'));
         });
     });
+
 </script>
+
 {% endblock %}

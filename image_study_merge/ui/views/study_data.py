@@ -1,7 +1,7 @@
 from .. import blueprint
 from flask import render_template, request, flash, redirect, url_for, send_file
 from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm
-from image_study_merge.services import automap, delete_mappings, extract_study_data
+from image_study_merge.services import automap, delete_mappings, delete_study_data, extract_study_data
 from image_study_merge.model import StudyData, study_data_factory
 from flask_wtf.file import FileRequired
 from lbrc_flask.database import db
@@ -26,7 +26,7 @@ class UploadStudyDataForm(FlashingForm):
 def index():
     search_form = SearchForm(formdata=request.args)
 
-    q = StudyData.query
+    q = StudyData.query.filter(StudyData.deleted == False)
 
     if search_form.search.data:
         q = q.filter(StudyData.filename.like(f'%{search_form.search.data}%'))
@@ -91,8 +91,7 @@ def study_data_delete():
 
     if form.validate_on_submit():
         sd = StudyData.query.get_or_404(form.id.data)
-        db.session.delete(sd)
-        db.session.commit()
+        delete_study_data(sd.id)
 
     return redirect(url_for('ui.index'))
 
@@ -103,7 +102,7 @@ def study_data_delete_mappings():
 
     if form.validate_on_submit():
         sd = StudyData.query.get_or_404(form.id.data)
-        delete_mappings(sd)
+        delete_mappings(sd.id)
 
     return redirect(url_for('ui.index'))
 
@@ -112,6 +111,6 @@ def study_data_delete_mappings():
 def study_data_automap(id):
     study_data = StudyData.query.get_or_404(id)
 
-    automap(study_data)
+    automap(study_data.id)
 
     return redirect(url_for('ui.index'))

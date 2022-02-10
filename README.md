@@ -47,7 +47,7 @@ To start Celery run the following command from the `image_study_merge`
 directory:
 
 ```
-celery -A celery_worker.celery worker
+celery -A celery_worker.celery worker -l 'INFO'
 ```
 
 ## Development
