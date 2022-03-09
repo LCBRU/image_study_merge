@@ -24,6 +24,7 @@ expansions = {
     'dbp': {'diastolic', 'blood', 'pressure'},
     'hr': {'heart', 'rate', 'pulse'},
     'dob': {'date', 'birth'},
+    'hypercholesterolaemia': {'high', 'cholesterol'}
 }
 
 less_important_words = {
@@ -365,6 +366,8 @@ def get_word_bits(value, debug=False):
     for synonyms in thesaurus:
         if bits.intersection(synonyms):
             bits |= synonyms
+
+    print(bits)
 
     return bits
 
