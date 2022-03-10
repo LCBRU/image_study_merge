@@ -25,7 +25,7 @@
         {% for s in study_datas.items %}
             <li class="list-group-item summary_details">
                 <div class='row'>
-                    <div class="col-6">
+                    <div class="col-5">
                         <div>
                             <header>
                                 {% if s.updating %}
@@ -55,11 +55,14 @@
                                         <span class="badge badge-warning">Updating <span class="inline_loader"></span></span>
                                     {% endif %}
                                 </h1>
-                                <h2><a href="{{ url_for('ui.study_data_download', id=s.id) }}">{{s.filename}}</a> uploaded {{s.created_date | datetime_humanize}}</h2>
+                                <h2>
+                                    <a href="{{ url_for('ui.study_data_download', id=s.id) }}">{{s.filename}}</a><br>
+                                    uploaded {{s.created_date | datetime_humanize}}
+                                </h2>
                             </header>
                         </div>
                     </div>
-                    <div class="col-6">
+                    <div class="col-7">
                         <div class="btn-toolbar float-right" role="toolbar">
                             {% if not s.locked %}
                                 <div class="btn-group mr-1 mb-1" role="group">
