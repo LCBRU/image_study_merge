@@ -36,18 +36,23 @@
                                 {% endif %}
 
                                 <h1>
-                                    <a class="btn {{ disabled }}"
-                                        data-toggle="modal"
-                                        title="Delete study data {{ s.study_name }}"
-                                        data-id="{{ s.id }}"
-                                        data-name="{{ s.study_name }}"
-                                        data-target="#deleteModal"
-                                        href="#"><i class="fas fa-trash"></i>
-                                    </a>
+                                    {% if not s.locked %}
+                                        <a class="btn {{ disabled }}"
+                                            data-toggle="modal"
+                                            title="Delete study data {{ s.study_name }}"
+                                            data-id="{{ s.id }}"
+                                            data-name="{{ s.study_name }}"
+                                            data-target="#deleteModal"
+                                            href="#"><i class="fas fa-trash"></i>
+                                        </a>
+                                    {% else %}
+                                        <span class="badge badge-warning"><i class="fas fa-lock"></i> Locked</span>
+                                    {% endif %}
+
                                     {{s.study_name}}
+
                                     {% if s.updating %}
                                         <span class="badge badge-warning">Updating <span class="inline_loader"></span></span>
-                                        
                                     {% endif %}
                                 </h1>
                                 <h2><a href="{{ url_for('ui.study_data_download', id=s.id) }}">{{s.filename}}</a> uploaded {{s.created_date | datetime_humanize}}</h2>
@@ -56,25 +61,46 @@
                     </div>
                     <div class="col-6">
                         <div class="btn-toolbar float-right" role="toolbar">
-                            <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="btn btn-primary mb-1 lock_screen {{ disabled }}"
-                                    title="Automap columns for study data {{ s.study_name }}"
-                                    href="{{ url_for('ui.study_data_automap', id=s.id) }}"><i class="fas fa-random"></i> Automap</a>
-                            </div>
-                            <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="btn btn-primary mb-1 {{ disabled }}"
-                                    title="Edit column mapping for study data {{ s.study_name }}"
-                                    href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-map-signs"></i><span> Mappings ({{ s.mapped_columns | length }}/{{ s.columns | length }})</span></a>
-                            </div>
-                            <div class="btn-group mr-1 mb-1" role="group">
-                                <a class="btn btn-primary mb-1 {{ disabled }}"
-                                    data-toggle="modal"
-                                    title="Delete mappings for {{ s.study_name }}"
-                                    data-id="{{ s.id }}"
-                                    data-name="{{ s.study_name }}"
-                                    data-target="#deleteMappingsModal"
-                                    href="#"><i class="fas fa-times"></i> Delete Mappings</a>
-                            </div>
+                            {% if not s.locked %}
+                                <div class="btn-group mr-1 mb-1" role="group">
+                                    <a class="btn btn-primary mb-1 lock_screen {{ disabled }}"
+                                        title="Automap columns for study data {{ s.study_name }}"
+                                        href="{{ url_for('ui.study_data_automap', id=s.id) }}"><i class="fas fa-random"></i> Automap</a>
+                                </div>
+                                <div class="btn-group mr-1 mb-1" role="group">
+                                    <a class="btn btn-primary mb-1 {{ disabled }}"
+                                        title="Edit column mapping for study data {{ s.study_name }}"
+                                        href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-map-signs"></i><span> Mappings ({{ s.mapped_columns | length }}/{{ s.columns | length }})</span></a>
+                                </div>
+                                <div class="btn-group mr-1 mb-1" role="group">
+                                    <a class="btn btn-primary mb-1 {{ disabled }}"
+                                        data-toggle="modal"
+                                        title="Delete mappings for {{ s.study_name }}"
+                                        data-id="{{ s.id }}"
+                                        data-name="{{ s.study_name }}"
+                                        data-target="#deleteMappingsModal"
+                                        href="#"><i class="fas fa-times"></i> Delete Mappings</a>
+                                </div>
+                                <div class="btn-group mr-1 mb-1" role="group">
+                                    <a class="btn btn-primary mb-1 {{ disabled }}"
+                                        data-toggle="modal"
+                                        title="Lock mappings for {{ s.study_name }}"
+                                        data-id="{{ s.id }}"
+                                        data-name="{{ s.study_name }}"
+                                        data-target="#lockModal"
+                                        href="#"><i class="fas fa-lock"></i> Lock</a>
+                                </div>
+                            {% elif current_user.is_admin %}
+                                <div class="btn-group mr-1 mb-1" role="group">
+                                    <a class="btn btn-primary mb-1 {{ disabled }}"
+                                        data-toggle="modal"
+                                        title="Unlock mappings for {{ s.study_name }}"
+                                        data-id="{{ s.id }}"
+                                        data-name="{{ s.study_name }}"
+                                        data-target="#unlockModal"
+                                        href="#"><i class="fas fa-lock-open"></i> Unlock</a>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -108,6 +134,28 @@
     </form>
 {% endcall %}
 
+{% call render_modal('lockModal', 'Lock Study Data') %}
+    <p id="modal_description">Please confirm that you wish to lock <span id="name"></span>.</p>
+    <form id="lock_form" action="{{ url_for('ui.study_data_lock', prev=request.url) }}" method="POST" enctype="multipart/form-data">
+        <fieldset>
+            {{ confirm_form.hidden_tag() }}
+
+            {{ render_button_bar(cancel_url=request.url, submit_label="Lock") }}
+        </fieldset>
+    </form>
+{% endcall %}
+
+{% call render_modal('unlockModal', 'Unlock Study Data') %}
+    <p id="modal_description">Please confirm that you wish to unlock <span id="name"></span>.</p>
+    <form id="delete_form" action="{{ url_for('ui.study_data_unlock', prev=request.url) }}" method="POST" enctype="multipart/form-data">
+        <fieldset>
+            {{ confirm_form.hidden_tag() }}
+
+            {{ render_button_bar(cancel_url=request.url, submit_label="Unlock") }}
+        </fieldset>
+    </form>
+{% endcall %}
+
 {% endblock %}
 
 
@@ -123,6 +171,22 @@
         });
 
         $('#deleteMappingsModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var modal = $(this);
+
+            modal.find('#name').text(button.data('name'));
+            modal.find("#id").val(button.data('id'));
+        });
+
+        $('#lockModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var modal = $(this);
+
+            modal.find('#name').text(button.data('name'));
+            modal.find("#id").val(button.data('id'));
+        });
+
+        $('#unlockModal').on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget);
             var modal = $(this);
 

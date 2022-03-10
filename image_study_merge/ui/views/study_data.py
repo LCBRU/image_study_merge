@@ -1,16 +1,23 @@
 from .. import blueprint
 from flask import render_template, request, flash, redirect, url_for, send_file
-from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm
+from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm, Unique
 from image_study_merge.services import automap, delete_mappings, delete_study_data, extract_study_data
 from image_study_merge.model import StudyData, study_data_factory
 from flask_wtf.file import FileRequired
 from lbrc_flask.database import db
 from wtforms import StringField
 from wtforms.validators import Length, DataRequired
+from lbrc_flask.security import must_be_admin
 
 
 class UploadStudyDataForm(FlashingForm):
-    study_name = StringField("Study Name", validators=[Length(max=100), DataRequired()])
+    study_name = StringField(
+        "Study Name",
+        validators=[
+            Length(max=100),
+            DataRequired(),
+            Unique(StudyData, StudyData.study_name),
+        ])
     upload = FileField(
         'Study Data File',
         accept=[
@@ -114,3 +121,38 @@ def study_data_automap(id):
     automap(study_data.id)
 
     return redirect(url_for('ui.index'))
+
+
+@blueprint.route("/study_data/lock", methods=['POST'])
+def study_data_lock():
+    form = ConfirmForm()
+
+    if form.validate_on_submit():
+        sd = StudyData.query.get_or_404(form.id.data)
+        sd.locked = True
+
+        db.session.add(sd)
+        db.session.commit()
+
+        flash(f'Study data {sd.study_name} locked')
+
+    return redirect(url_for('ui.index'))
+
+
+@blueprint.route("/study_data/unlock", methods=['POST'])
+@must_be_admin()
+def study_data_unlock():
+    form = ConfirmForm()
+
+    if form.validate_on_submit():
+        sd = StudyData.query.get_or_404(form.id.data)
+        sd.locked = False
+
+        db.session.add(sd)
+        db.session.commit()
+
+        flash(f'Study data {sd.study_name} unlocked')
+
+    return redirect(url_for('ui.index'))
+
+

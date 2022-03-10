@@ -40,6 +40,7 @@ class StudyData(AuditMixin, CommonMixin, db.Model):
     extension = db.Column(db.String(100), nullable=False)
     updating = db.Column(db.Boolean, default=False, nullable=False)
     deleted = db.Column(db.Boolean, default=False, nullable=False)
+    locked = db.Column(db.Boolean, default=False, nullable=False)
 
     __mapper_args__ = {
         "polymorphic_on": extension,

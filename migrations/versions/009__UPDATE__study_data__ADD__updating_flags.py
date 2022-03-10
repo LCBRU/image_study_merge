@@ -24,6 +24,9 @@ def upgrade(migrate_engine):
     deleted = Column("deleted", Boolean, default=False)
     deleted.create(t)
 
+    locked = Column("locked", Boolean, default=False)
+    locked.create(t)
+
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
@@ -31,3 +34,4 @@ def downgrade(migrate_engine):
 
     t.c.updating.drop()
     t.c.deleted.drop()
+    t.c.locked.drop()
