@@ -4,6 +4,7 @@ from sqlalchemy import (
     Column,
     Integer,
     ForeignKey,
+    NVARCHAR,
 )
 from lbrc_flask.security.migrations import get_audit_mixin_columns
 
@@ -22,7 +23,7 @@ def upgrade(migrate_engine):
         Column("id", Integer, primary_key=True),
         Column("match_score", Integer),
         Column("study_data_column_id", Integer, ForeignKey(sdc.c.id), index=True, nullable=False),
-        Column("data_dictionary_id", Integer, ForeignKey(dd.c.id), index=True, nullable=False),
+        Column("mapping", NVARCHAR(100)),
         *get_audit_mixin_columns(),
     )
 

@@ -220,19 +220,23 @@ def _delete_mappings(study_data_id):
 
     columns = []
     value_mappings = []
+    suggested_mappings = []
 
     for c in study_data.columns:
         if c.mapping:
             c.mapping = ''
             columns.append(c)
 
-        for vm in c.value_mappings:
-            if vm.mapping:
-                vm.mapping = ""
-                value_mappings.append(vm)
+        value_mappings.extend(c.value_mappings)
+        suggested_mappings.extend(c.suggested_mappings)
 
     db.session.add_all(columns)
-    db.session.add_all(value_mappings)
+
+    for vm in value_mappings:
+        db.session.delete(vm)
+    for sm in suggested_mappings:
+        db.session.delete(sm)
+
     db.session.commit()
 
     study_data = StudyData.query.get(study_data_id)
@@ -332,7 +336,7 @@ def automap_column__match_by_name(study_data, data_dictionary):
             suggestions.append(StudyDataColumnSuggestion(
                 match_score=score,
                 study_data_column=c,
-                data_dictionary=dd,
+                mapping=dd.field_name,
             ))
 
     db.session.add_all(suggestions)

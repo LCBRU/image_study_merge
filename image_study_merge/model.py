@@ -213,7 +213,7 @@ class StudyDataColumnSuggestion(AuditMixin, CommonMixin, db.Model):
     match_score = db.Column(db.Integer)
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
     study_data_column = db.relationship(StudyDataColumn, backref=db.backref("suggested_mappings", cascade="all,delete"))
-    data_dictionary_id = db.Column(db.Integer, db.ForeignKey(DataDictionary.id))
+    mapping = db.Column(db.String(100), db.ForeignKey(DataDictionary.field_name))
     data_dictionary = db.relationship(DataDictionary)
 
 
