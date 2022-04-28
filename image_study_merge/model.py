@@ -87,8 +87,9 @@ class StudyDataCsv(StudyData):
 
 
 class DataDictionary(AuditMixin, CommonMixin, db.Model):
-    DO_NOT_MAP = '[Do Not Map]'
-    NO_MAPPING = '[No Mapping]'
+    DO_NOT_IMPORT = '[Do Not Import]'
+    NOT_YET_MAPPED = '[Not Yet Mapped]'
+    NO_SUITABLE_MAPPING = '[No Suitable Mapping]'
 
     id = db.Column(db.Integer, primary_key=True)
     field_number = db.Column(db.Integer)
@@ -110,13 +111,19 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
             form_name='',
             section_name='',
             field_name='',
-            field_label=DataDictionary.NO_MAPPING,
+            field_label=DataDictionary.NOT_YET_MAPPED,
         ))
         dd_items.append(DataDictionary(
             form_name='',
             section_name='',
-            field_name=DataDictionary.DO_NOT_MAP,
-            field_label=DataDictionary.DO_NOT_MAP,
+            field_name=DataDictionary.DO_NOT_IMPORT,
+            field_label=DataDictionary.DO_NOT_IMPORT,
+        ))
+        dd_items.append(DataDictionary(
+            form_name='',
+            section_name='',
+            field_name=DataDictionary.NO_SUITABLE_MAPPING,
+            field_label=DataDictionary.NO_SUITABLE_MAPPING,
         ))
 
         dd_items.extend(DataDictionary.query.all())

@@ -2,20 +2,12 @@ from itertools import islice
 from flask_api import status
 from flask import render_template, request
 from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn
-from lbrc_flask.forms import SearchForm
 from lbrc_flask.database import db
-from wtforms_components import SelectField
 from sqlalchemy import func, or_
 
 from image_study_merge.services import automap_value__map_exact_name
+from image_study_merge.ui.views.forms import MappingSearchForm
 from .. import blueprint
-
-
-class MappingSearchForm(SearchForm):
-    show_do_not_map_fields = SelectField('Show [Do Not Map] fields', choices=[('0', 'No'), ('1', 'Yes')], default='0')
-    show_no_mapping_fields = SelectField('Show [No Mapping] fields', choices=[('0', 'No'), ('1', 'Yes')], default='1')
-    show_mapped_fields = SelectField('Show mapped fields', choices=[('0', 'No'), ('1', 'Yes')], default='1')
-    show_suggestions = SelectField('Show suggestions', choices=[('0', 'No'), ('1', 'Unmapped Columns'), ('2', 'All')], default='1')
 
 
 @blueprint.route("/column_mapping/<int:id>", methods=['GET', 'POST'])
@@ -29,16 +21,19 @@ def column_mapping(id):
     if search_form.search.data:
         q = q.filter(StudyDataColumn.name.like(f'%{search_form.search.data}%'))
 
-    if search_form.show_do_not_map_fields.data != '1':
-        q = q.filter(func.coalesce(StudyDataColumn.mapping, '') != DataDictionary.DO_NOT_MAP)
+    if search_form.show_do_not_import.data != '1':
+        q = q.filter(func.coalesce(StudyDataColumn.mapping, '') != DataDictionary.DO_NOT_IMPORT)
 
-    if search_form.show_no_mapping_fields.data != '1':
+    if search_form.show_not_yet_mapped.data != '1':
         q = q.filter(func.coalesce(StudyDataColumn.mapping, '') != '')
 
-    if search_form.show_mapped_fields.data != '1':
+    if search_form.show_no_suitable_mapping.data != '1':
+        q = q.filter(func.coalesce(StudyDataColumn.mapping, '') != DataDictionary.NO_SUITABLE_MAPPING)
+
+    if search_form.show_mapped.data != '1':
         q = q.filter(or_(
             func.coalesce(StudyDataColumn.mapping, '') == '',
-            func.coalesce(StudyDataColumn.mapping, '') == DataDictionary.DO_NOT_MAP,
+            func.coalesce(StudyDataColumn.mapping, '') == DataDictionary.DO_NOT_IMPORT,
         ))
 
     mappings = q.paginate(

@@ -389,7 +389,7 @@ def delete_column_suggested_mappings(study_data):
 
 
 def automap_column__do_not_map(study_data, data_dictionary):
-    automap_columns__dictionary(study_data, {standardize_name('complete?'): DataDictionary.DO_NOT_MAP})
+    automap_columns__dictionary(study_data, {standardize_name('complete?'): DataDictionary.DO_NOT_IMPORT})
 
 
 def automap_column__map_exact_field_name(study_data, data_dictionary):
