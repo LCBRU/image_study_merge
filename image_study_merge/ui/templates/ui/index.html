@@ -104,6 +104,15 @@
                                         href="#"><i class="fas fa-lock-open"></i> Unlock</a>
                                 </div>
                             {% endif %}
+                            {% if current_user.is_admin %}
+                                <div class="btn-group mr-1 mb-1" role="group">
+                                    <div class="btn-group mr-1 mb-1" role="group">
+                                        <a class="btn btn-primary mb-1 {{ disabled }}"
+                                            title="Edit column mapping for study data {{ s.study_name }}"
+                                            href="{{ url_for('ui.study_data_export', id=s.id) }}"><i class="fas fa-file-export"></i><span> Export</span></a>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

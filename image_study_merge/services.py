@@ -6,6 +6,7 @@ from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn, 
 from lbrc_flask.database import db
 from nltk.corpus import stopwords
 from lbrc_flask.celery import celery
+from lbrc_flask.export import csv_download
 
 
 thesaurus = [
@@ -434,3 +435,13 @@ def automap_values__dictionary(study_data_column, dictionary):
 
     db.session.add_all(complete_mappings)
     db.session.commit()
+
+
+def create_export(study_id):
+    sd = StudyData.query.get(study_id)
+
+    return csv_download(
+        f'export_{study_id}',
+        [dd.field_name for dd in DataDictionary.query.all()],
+        [{d.study_data_column.mapping: d.get_mapped_value() for d in c.data if d.study_data_column.is_mapped} for c in sd.rows],
+    )

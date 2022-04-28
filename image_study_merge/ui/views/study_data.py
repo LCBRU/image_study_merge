@@ -1,7 +1,7 @@
 from .. import blueprint
 from flask import render_template, request, flash, redirect, url_for, send_file
 from lbrc_flask.forms import SearchForm, FlashingForm, FileField, ConfirmForm, Unique
-from image_study_merge.services import automap, delete_mappings, delete_study_data, extract_study_data
+from image_study_merge.services import automap, create_export, delete_mappings, delete_study_data, extract_study_data
 from image_study_merge.model import StudyData, study_data_factory
 from flask_wtf.file import FileRequired
 from lbrc_flask.database import db
@@ -156,3 +156,7 @@ def study_data_unlock():
     return redirect(url_for('ui.index'))
 
 
+@blueprint.route("/study_data/export/<int:id>")
+@must_be_admin()
+def study_data_export(id):
+    return create_export(id)

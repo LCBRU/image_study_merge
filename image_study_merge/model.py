@@ -183,6 +183,14 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
         else:
             return {}
 
+    @staticmethod
+    def meta_mappings():
+        return [
+            DataDictionary.DO_NOT_IMPORT,
+            DataDictionary.NO_SUITABLE_MAPPING,
+            DataDictionary.NOT_YET_MAPPED,
+        ]
+
 
 class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -199,12 +207,35 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
         return {(d.value or '').lower().strip() for d in self.data if d.value}
 
     @property
+    def mapped_values_dictionary(self):
+        return {v.value: v.mapping for v in self.mapped_values}
+
+    def map_value(self, value):
+        if not self.is_mapped:
+            return
+        
+        if not self.mapped_data_dictionary.has_choices:
+            return value
+
+        value = value.lower().strip()
+        mapped_value = self.mapped_values_dictionary.get(value, '')
+
+        if mapped_value in DataDictionary.meta_mappings():
+            return ''
+        else:
+            return mapped_value
+
+    @property
     def mapped_values(self):
         return [v for v in self.value_mappings if v.mapping]
 
     @property
     def unmapped_values(self):
         return [v for v in self.value_mappings if not v.mapping]
+
+    @property
+    def is_mapped(self):
+        return self.mapping and self.mapping not in DataDictionary.meta_mappings()
 
 
 class StudyDataColumnValueMapping(AuditMixin, CommonMixin, db.Model):
@@ -234,8 +265,11 @@ class StudyDataRow(AuditMixin, CommonMixin, db.Model):
 class StudyDataRowData(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     study_data_row_id = db.Column(db.Integer, db.ForeignKey(StudyDataRow.id))
-    study_data_row = db.relationship(StudyDataRow, backref=db.backref("rows", cascade="all,delete"))
+    study_data_row = db.relationship(StudyDataRow, backref=db.backref("data", cascade="all,delete"))
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
     study_data_column = db.relationship(StudyDataColumn, backref=db.backref("data", cascade="all,delete"))
 
     value = db.Column(db.String(1000))
+
+    def get_mapped_value(self):
+        return self.study_data_column.map_value(self.value)
