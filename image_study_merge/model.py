@@ -238,7 +238,7 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
 
     @property
     def is_mapped(self):
-        return self.mapping and self.mapping not in DataDictionary.meta_mappings()
+        return self.mapped_data_dictionary and self.mapping not in DataDictionary.meta_mappings()
 
 
 class StudyDataColumnValueMapping(AuditMixin, CommonMixin, db.Model):
