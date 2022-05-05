@@ -214,6 +214,9 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
         if not self.is_mapped:
             return
         
+        if not self.mapped_data_dictionary:
+            return
+
         if not self.mapped_data_dictionary.has_choices:
             return value
 
