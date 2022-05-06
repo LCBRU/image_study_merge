@@ -196,12 +196,12 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     column_number = db.Column(db.Integer)
     study_data_id = db.Column(db.Integer, db.ForeignKey(StudyData.id))
-    study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete"))
+    study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete", lazy="joined"))
 
     name = db.Column(db.String(500))
     mapping = db.Column(db.String(100), db.ForeignKey(DataDictionary.field_name))
 
-    mapped_data_dictionary = db.relationship(DataDictionary)
+    mapped_data_dictionary = db.relationship(DataDictionary, lazy="joined")
 
     def unique_data_value(self):
         return {(d.value or '').lower().strip() for d in self.data if d.value}
@@ -244,7 +244,7 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
 class StudyDataColumnValueMapping(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
-    study_data_column = db.relationship(StudyDataColumn, backref=db.backref("value_mappings", cascade="all,delete"))
+    study_data_column = db.relationship(StudyDataColumn, backref=db.backref("value_mappings", cascade="all,delete", lazy="joined"))
 
     value = db.Column(db.String(100))
     mapping = db.Column(db.String(100))
@@ -268,7 +268,7 @@ class StudyDataRow(AuditMixin, CommonMixin, db.Model):
 class StudyDataRowData(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     study_data_row_id = db.Column(db.Integer, db.ForeignKey(StudyDataRow.id))
-    study_data_row = db.relationship(StudyDataRow, backref=db.backref("data", cascade="all,delete"))
+    study_data_row = db.relationship(StudyDataRow, backref=db.backref("data", cascade="all,delete", lazy="joined"))
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
     study_data_column = db.relationship(StudyDataColumn, backref=db.backref("data", cascade="all,delete"))
 
