@@ -204,7 +204,7 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
         if not self.export_column_per_value:
             return [self.field_name]
         else:
-            return [f'{self.field_name}__{v}' for v in self.choice_values.keys()]
+            return [f'{self.field_name}___{v}' for v in self.choice_values.keys()]
 
     def get_field_name_for_value(self, value):
         if not self.export_column_per_value:
@@ -218,7 +218,6 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     column_number = db.Column(db.Integer)
     study_data_id = db.Column(db.Integer, db.ForeignKey(StudyData.id))
-    # study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete", lazy="joined"))
     study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete"))
 
     name = db.Column(db.String(500))

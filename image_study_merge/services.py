@@ -440,7 +440,6 @@ def automap_values__dictionary(study_data_column, dictionary):
 
 def create_export(study_id):
     sd = StudyData.query.options(joinedload(StudyData.columns)).get(study_id)
-    # sd = StudyData.query.options().get(study_id)
 
     field_names = chain(*[dd.get_export_column_names() for dd in DataDictionary.query.all()])
     rows = [c.get_export_mapping() for c in sd.rows]
