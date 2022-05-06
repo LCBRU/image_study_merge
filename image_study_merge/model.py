@@ -158,6 +158,10 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
         return ': '.join(filter(len, [self.group_name, self.field_label]))
 
     @property
+    def export_column_per_value(self):
+        return self.field_type in {'checkbox'}
+
+    @property
     def has_choices(self):
         return self.field_type in {'yesno', 'radio', 'dropdown', 'checkbox'}
 
@@ -191,12 +195,31 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
             DataDictionary.NOT_YET_MAPPED,
         ]
 
+    def choice_for_value(self, value):
+        for k, v in self.choice_values.items:
+            if v.lower() == value.lower():
+                return k
+
+    def get_export_column_names(self):
+        if not self.export_column_per_value:
+            return [self.field_name]
+        else:
+            return [f'{self.field_name}__{v}' for v in self.choice_values.keys()]
+
+    def get_field_name_for_value(self, value):
+        if not self.export_column_per_value:
+            return self.field_name
+        
+        if value in self.choice_values.keys():
+            return f'{self.field_name}__{self.choice_for_value(value)}'
+
 
 class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     column_number = db.Column(db.Integer)
     study_data_id = db.Column(db.Integer, db.ForeignKey(StudyData.id))
-    study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete", lazy="joined"))
+    # study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete", lazy="joined"))
+    study_data = db.relationship(StudyData, backref=db.backref("columns", cascade="all,delete"))
 
     name = db.Column(db.String(500))
     mapping = db.Column(db.String(100), db.ForeignKey(DataDictionary.field_name))
@@ -210,23 +233,28 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     def mapped_values_dictionary(self):
         return {v.value: v.mapping for v in self.mapped_values}
 
-    def map_value(self, value):
+    def get_export_mapping(self, value):
         if not self.is_mapped:
-            return
+            return {}
         
         if not self.mapped_data_dictionary:
-            return
+            return {}
+
+        mapped_field_name = self.mapped_data_dictionary.get_field_name_for_value(value)
 
         if not self.mapped_data_dictionary.has_choices:
-            return value
-
+            return {mapped_field_name: value}
+        
         value = value.lower().strip()
         mapped_value = self.mapped_values_dictionary.get(value, '')
 
         if mapped_value in DataDictionary.meta_mappings():
-            return ''
-        else:
-            return mapped_value
+            return {}
+
+        if self.mapped_data_dictionary.export_column_per_value:
+            mapped_value = 1
+
+        return {mapped_field_name: mapped_value}
 
     @property
     def mapped_values(self):
@@ -264,6 +292,14 @@ class StudyDataRow(AuditMixin, CommonMixin, db.Model):
     study_data_id = db.Column(db.Integer, db.ForeignKey(StudyData.id))
     study_data = db.relationship(StudyData, backref=db.backref("rows", cascade="all,delete"))
 
+    def get_export_mapping(self):
+        result = {}
+
+        for d in self.data:
+            result.update(d.get_export_mapping())
+        
+        return result
+
 
 class StudyDataRowData(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -274,5 +310,5 @@ class StudyDataRowData(AuditMixin, CommonMixin, db.Model):
 
     value = db.Column(db.String(1000))
 
-    def get_mapped_value(self):
-        return self.study_data_column.map_value(self.value)
+    def get_export_mapping(self):
+        return self.study_data_column.get_export_mapping(self.value)

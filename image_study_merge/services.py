@@ -1,4 +1,5 @@
 from collections import Counter
+from itertools import chain
 import re
 import nltk
 from flask import current_app
@@ -7,7 +8,7 @@ from lbrc_flask.database import db
 from nltk.corpus import stopwords
 from lbrc_flask.celery import celery
 from lbrc_flask.export import csv_download
-
+from sqlalchemy.orm import joinedload
 
 thesaurus = [
     {'gender', 'sex'},
@@ -438,10 +439,10 @@ def automap_values__dictionary(study_data_column, dictionary):
 
 
 def create_export(study_id):
-    sd = StudyData.query.get(study_id)
+    sd = StudyData.query.options(joinedload(StudyData.columns)).get(study_id)
+    # sd = StudyData.query.options().get(study_id)
 
-    return csv_download(
-        f'export_{study_id}',
-        [dd.field_name for dd in DataDictionary.query.all()],
-        [{d.study_data_column.mapping: d.get_mapped_value() for d in c.data if d.study_data_column.is_mapped} for c in sd.rows],
-    )
+    field_names = chain(*[dd.get_export_column_names() for dd in DataDictionary.query.all()])
+    rows = [c.get_export_mapping() for c in sd.rows]
+
+    return csv_download(f'export_{study_id}', field_names, rows)
