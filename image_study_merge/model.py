@@ -9,6 +9,7 @@ from lbrc_flask.security import AuditMixin
 from lbrc_flask.model import CommonMixin
 from lbrc_flask.database import db
 from lbrc_flask.column_data import ExcelData, Excel97Data, CsvData
+from lbrc_flask.validators import is_integer, is_float
 
 
 def study_data_factory(filename, **kwargs):
@@ -241,9 +242,13 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
 
         mapped_field_name = self.mapped_data_dictionary.get_field_name_for_value(value)
 
-        if not self.mapped_data_dictionary.has_choices:
-            return {mapped_field_name: value}
+        if self.mapped_data_dictionary.has_choices:
+            return self._get_export_mapping_choices(mapped_field_name, value)
+        else:
+            return self._get_export_mapping_value(mapped_field_name, value)
         
+
+    def _get_export_mapping_choices(self, mapped_field_name, value):
         value = value.lower().strip()
         mapped_value = self.mapped_values_dictionary.get(value, '')
 
@@ -254,6 +259,21 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
             mapped_value = 1
 
         return {mapped_field_name: mapped_value}
+
+    def _get_export_mapping_value(self, mapped_field_name, value):
+        if self.mapped_data_dictionary.text_validation_type == 'integer':
+            if not is_integer(value):
+                return {}
+            else:
+                return {mapped_field_name: int(value)}
+
+        if self.mapped_data_dictionary.text_validation_type == 'number':
+            if not is_float(value):
+                return {}
+            else:
+                return {mapped_field_name: float(value)}
+
+        return {mapped_field_name: value}
 
     @property
     def mapped_values(self):
