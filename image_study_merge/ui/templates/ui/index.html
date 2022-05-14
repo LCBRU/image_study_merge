@@ -73,7 +73,7 @@
                                 <div class="btn-group mr-1 mb-1" role="group">
                                     <a class="btn btn-primary mb-1 {{ disabled }}"
                                         title="Edit column mapping for study data {{ s.study_name }}"
-                                        href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-map-signs"></i><span> Mappings ({{ s.mapped_columns | length }}/{{ s.columns | length }})</span></a>
+                                        href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-map-signs"></i><span> Mappings ({{ s.mapped_column_count }} / {{ s.column_count }})</span></a>
                                 </div>
                                 <div class="btn-group mr-1 mb-1" role="group">
                                     <a class="btn btn-primary mb-1 {{ disabled }}"

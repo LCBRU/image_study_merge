@@ -4,13 +4,14 @@ from itertools import groupby
 from unittest import result
 from flask import current_app
 from pathlib import Path
+from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from lbrc_flask.security import AuditMixin
 from lbrc_flask.model import CommonMixin
 from lbrc_flask.database import db
 from lbrc_flask.column_data import ExcelData, Excel97Data, CsvData
 from lbrc_flask.validators import is_integer, is_float
-
+from sqlalchemy.ext.hybrid import hybrid_property
 
 def study_data_factory(filename, **kwargs):
     _, file_extension = os.path.splitext(filename)
@@ -58,6 +59,14 @@ class StudyData(AuditMixin, CommonMixin, db.Model):
     @property
     def mapped_columns(self):
         return [c for c in self.columns if c.mapped_data_dictionary]
+
+    @property
+    def column_count(self):
+        return StudyDataColumn.query.filter(StudyDataColumn.study_data_id == self.id).count()
+
+    @property
+    def mapped_column_count(self):
+        return StudyDataColumn.query.filter(StudyDataColumn.study_data_id == self.id).filter(StudyDataColumn.mapped_data_dictionary != None).count()
 
 
 class StudyDataXlsx(StudyData):
