@@ -103,7 +103,7 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     field_number = db.Column(db.Integer)
-    field_name = db.Column(db.String(100))
+    field_name = db.Column(db.String(100), unique=True)
     form_name = db.Column(db.String(100))
     section_name = db.Column(db.String(100))
     field_type = db.Column(db.String(100))
