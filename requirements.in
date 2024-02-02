@@ -9,3 +9,4 @@ flask-security-too[fsqla,common]
 alembic
 sqlalchemy<2.00
 flask-admin
+urllib3

@@ -300,7 +300,10 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
 class StudyDataColumnValueMapping(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
-    study_data_column = db.relationship(StudyDataColumn, backref=db.backref("value_mappings", cascade="all,delete", lazy="joined"))
+    study_data_column = db.relationship(StudyDataColumn, backref=db.backref(
+        "value_mappings",
+        cascade="all,delete",
+        lazy="joined"))
 
     value = db.Column(db.String(100))
     mapping = db.Column(db.String(100))
