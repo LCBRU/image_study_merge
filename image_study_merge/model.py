@@ -12,6 +12,10 @@ from lbrc_flask.database import db
 from lbrc_flask.column_data import ExcelData, Excel97Data, CsvData
 from lbrc_flask.validators import is_integer, is_float
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import SQLColumnExpression
+from sqlalchemy import select, Integer, func
+from typing import Optional
+
 
 def study_data_factory(filename, **kwargs):
     _, file_extension = os.path.splitext(filename)
@@ -107,8 +111,8 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
     form_name = db.Column(db.String(100))
     section_name = db.Column(db.String(100))
     field_type = db.Column(db.String(100))
-    field_label = db.Column(db.String(100))
-    choices = db.Column(db.String(100))
+    field_label = db.Column(db.String(500))
+    choices = db.Column(db.String(1000))
     field_note = db.Column(db.String(100))
     text_validation_type = db.Column(db.String(100))
     text_validation_min = db.Column(db.String(100))
@@ -233,7 +237,7 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
     name = db.Column(db.String(500))
     mapping = db.Column(db.String(100), db.ForeignKey(DataDictionary.field_name))
 
-    mapped_data_dictionary = db.relationship(DataDictionary, lazy="joined")
+    mapped_data_dictionary = db.relationship(DataDictionary)
 
     def unique_data_value(self):
         return {(d.value or '').lower().strip() for d in self.data if d.value}
@@ -302,8 +306,8 @@ class StudyDataColumnValueMapping(AuditMixin, CommonMixin, db.Model):
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
     study_data_column = db.relationship(StudyDataColumn, backref=db.backref(
         "value_mappings",
-        cascade="all,delete",
-        lazy="joined"))
+        cascade="all,delete"
+        ))
 
     value = db.Column(db.String(100))
     mapping = db.Column(db.String(100))
@@ -335,7 +339,7 @@ class StudyDataRow(AuditMixin, CommonMixin, db.Model):
 class StudyDataRowData(AuditMixin, CommonMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     study_data_row_id = db.Column(db.Integer, db.ForeignKey(StudyDataRow.id))
-    study_data_row = db.relationship(StudyDataRow, backref=db.backref("data", cascade="all,delete", lazy="joined"))
+    study_data_row = db.relationship(StudyDataRow, backref=db.backref("data", cascade="all,delete"))
     study_data_column_id = db.Column(db.Integer, db.ForeignKey(StudyDataColumn.id))
     study_data_column = db.relationship(StudyDataColumn, backref=db.backref("data", cascade="all,delete"))
 

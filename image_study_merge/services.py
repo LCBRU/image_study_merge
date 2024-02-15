@@ -192,17 +192,17 @@ def extract_study_data_rows(study_data):
 def extract_study_data_values(study_data):
     current_app.logger.info('extract_study_data_values: Started')
 
-    values = []
-
     for c in study_data.columns:
+        values = []
+
         for v in c.unique_data_value():
             values.append(StudyDataColumnValueMapping(
                 study_data_column=c,
                 value=v,
             ))
 
-    db.session.add_all(values)
-    db.session.commit()
+        db.session.add_all(values)
+        db.session.commit()
 
     current_app.logger.info('extract_study_data_values: Completed')
 

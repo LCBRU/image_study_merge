@@ -4,9 +4,9 @@ pymysql
 wtforms_components
 nltk
 pymysql
-celery==4.4.2
+celery
 flask-security-too[fsqla,common]
 alembic
-sqlalchemy<2.00
+sqlalchemy
 flask-admin
 urllib3

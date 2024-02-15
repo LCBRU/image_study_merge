@@ -1,9 +1,9 @@
 from itertools import islice
-from flask_api import status
 from flask import render_template, request
-from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn
+from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn, StudyDataColumnSuggestion
 from lbrc_flask.database import db
 from sqlalchemy import func, or_
+from sqlalchemy.orm import selectinload
 
 from image_study_merge.services import automap_value__map_exact_name
 from image_study_merge.ui.views.forms import MappingSearchForm
@@ -36,6 +36,12 @@ def column_mapping(id):
             func.coalesce(StudyDataColumn.mapping, '') == DataDictionary.DO_NOT_IMPORT,
         ))
 
+    q = q.options(
+        selectinload(StudyDataColumn.suggested_mappings).selectinload(StudyDataColumnSuggestion.data_dictionary),
+        selectinload(StudyDataColumn.mapped_data_dictionary),
+        selectinload(StudyDataColumn.value_mappings),
+    )
+
     mappings = q.paginate(
             page=search_form.page.data,
             per_page=20,
@@ -66,10 +72,10 @@ def column_mapping_update():
             if study_data_column.mapped_data_dictionary.has_choices:
                 automap_value__map_exact_name(study_data_column)
 
-        return '', status.HTTP_205_RESET_CONTENT
+        return '', 205
 
     except:
-        return 'A problem has occured.  Please try reloading the page.', status.HTTP_500_INTERNAL_SERVER_ERROR
+        return 'A problem has occured.  Please try reloading the page.', 500
 
 
 @blueprint.route("/column_mapping/source_sample/", methods=['POST'])

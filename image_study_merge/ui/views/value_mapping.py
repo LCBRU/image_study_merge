@@ -1,15 +1,17 @@
-from flask_api import status
 from flask import render_template, request
 from image_study_merge.model import DataDictionary, StudyDataColumn, StudyDataColumnValueMapping
 from lbrc_flask.database import db
 from sqlalchemy import func, or_
 from image_study_merge.ui.views.forms import MappingSearchForm
 from .. import blueprint
+from sqlalchemy.orm import selectinload, joinedload
 
 
 @blueprint.route("/value_mapping/<int:id>")
 def value_mapping(id):
-    study_data_column = StudyDataColumn.query.get_or_404(id)
+    study_data_column = StudyDataColumn.query.options(
+        joinedload(StudyDataColumn.mapped_data_dictionary),
+    ).get_or_404(id)
     search_form = MappingSearchForm(formdata=request.args)
 
     choices = {
@@ -67,7 +69,7 @@ def value_mapping_update():
         db.session.add(vm)
         db.session.commit()
 
-        return '', status.HTTP_205_RESET_CONTENT
+        return '', 205
 
     except:
-        return 'A problem has occured.  Please try reloading the page.', status.HTTP_500_INTERNAL_SERVER_ERROR
+        return 'A problem has occured.  Please try reloading the page.', 500
