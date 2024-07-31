@@ -1,12 +1,4 @@
--e git+https://github.com/LCBRU/lbrc_flask.git@main#egg=lbrc_flask
-Flask
-pymysql
-wtforms_components
+git+https://github.com/LCBRU/lbrc_flask.git@pyproject
 nltk
 pymysql
-celery
-flask-security-too[fsqla,common]
-alembic
-sqlalchemy
-flask-admin
 urllib3

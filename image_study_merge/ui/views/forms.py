@@ -1,4 +1,4 @@
-from wtforms_components import SelectField
+from wtforms import SelectField
 from lbrc_flask.forms import SearchForm
 from image_study_merge.model import DataDictionary
 
