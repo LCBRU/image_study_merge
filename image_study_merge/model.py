@@ -1,20 +1,14 @@
 import os
 import re
 from itertools import groupby
-from unittest import result
 from flask import current_app
 from pathlib import Path
-from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from lbrc_flask.security import AuditMixin
 from lbrc_flask.model import CommonMixin
 from lbrc_flask.database import db
 from lbrc_flask.column_data import ExcelData, Excel97Data, CsvData
 from lbrc_flask.validators import is_integer, is_float
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import SQLColumnExpression
-from sqlalchemy import select, Integer, func
-from typing import Optional
 
 
 def study_data_factory(filename, **kwargs):

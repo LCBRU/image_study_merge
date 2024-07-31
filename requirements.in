@@ -2,3 +2,4 @@ git+https://github.com/LCBRU/lbrc_flask.git@pyproject
 nltk
 pymysql
 urllib3
+Faker

@@ -59,6 +59,8 @@ email-validator==2.1.0.post1
     #   lbrc-flask
 et-xmlfile==1.1.0
     # via openpyxl
+faker==26.0.0
+    # via -r requirements.in
 flask==3.0.2
     # via
     #   flask-admin
@@ -179,6 +181,7 @@ python-dateutil==2.8.2
     # via
     #   arrow
     #   celery
+    #   faker
 python-dotenv==1.0.1
     # via lbrc-flask
 python-ldap==3.4.4
