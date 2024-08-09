@@ -4,7 +4,7 @@
     <li id="details_{{mapping.id}}" hx-target="#details_{{mapping.id}}" hx-swap="outerHTML">
         <header class="flex_two_left_grow">
             <h3>#{{ mapping.column_number }}: {{ mapping.name }}</h3>
-            <select name="mapping" id="mapping-{{ mapping.id }}" data-id="{{ mapping.id }}">
+            <select>
                 {% for g in data_dictionary_options %}
                     <optgroup label="{{ g['group'] }}">
                         {% for o in g['fields'] %}
@@ -56,7 +56,7 @@
                     <td>{{ s.data_dictionary.field_type }}</td>
                     <td>{{ s.match_score }}</td>
                     <td>
-                        <button  hx-post="{{url_for('ui.column_mapping_update', id=mapping.id, mapping=s.mapping, details_selector='suggestions')}}" role="button" type="button">Use</button>
+                        <button hx-post="{{url_for('ui.column_mapping_update', id=mapping.id, mapping=s.mapping, details_selector='suggestions')}}" role="button" type="button">Use</button>
                     </td>
                 </tr>
             {% endfor %}
@@ -87,7 +87,7 @@
                 <tr>
                     <td>{{ vm.value }}</td>
                     <td>
-                        <select name="mapping" id="mapping-{{ vm.id }}" data-id="{{vm.id}}">
+                        <select>
                             {% for value, name in value_mapping_choices.items() %}
                                 <option value="{{ value }}" {% if value == vm.mapping %}selected{% endif %} hx-post="{{url_for('ui.value_mapping_update', id=vm.id, mapping=value)}}">{{ name }}</option>
                             {% endfor %}
