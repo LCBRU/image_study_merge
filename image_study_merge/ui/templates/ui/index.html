@@ -1,212 +1,73 @@
-{% extends "ui/page.html" %}
-{% from "lbrc_flask/form_macros.html" import render_search, render_pagination, render_button_bar %}
-{% from "lbrc_flask/modal_macros.html" import render_modal %}
+{% extends "ui/menu_page.html" %}
+{% from "lbrc/form_macros.html" import render_form_fields, render_field_and_submit %}
+{% from "lbrc/pagination.html" import render_pagination, pagination_summary %}
 
-{% block content %}
+{% block menu_page_content %}
+<section class="container">
+    <header>
+        <h2>Study Data</h2>
 
-<section>
-    <div class="page-header">
-        <h1>Study Data</h1>
+        <form action="{{ url_for('ui.index') }}" method="GET" enctype="multipart/form-data">
+            <fieldset>
+                {{ render_form_fields(search_form) }}
 
-        {{ render_search(
-            search_form,
-            'ui.index',
-            placeholder='enter search text - searches file name',
-            buttons=[
-                {
-                    'text': 'Upload Study Data',
-                    'endpoint': 'ui.study_data_upload',
-                },
-            ],
-        ) }}
-    </div>
-
-    <ul class="list-group">
-        {% for s in study_datas.items %}
-            <li class="list-group-item summary_details">
-                <div class='row'>
-                    <div class="col-5">
-                        <div>
-                            <header>
-                                {% if s.updating %}
-                                    {% set disabled = 'disabled' %}
-                                    {% set reload = 'yes' %}
-                                {% else %}
-                                    {% set disabled = '' %}
-                                {% endif %}
-
-                                <h1>
-                                    {% if not s.locked %}
-                                        <a class="btn {{ disabled }}"
-                                            data-toggle="modal"
-                                            title="Delete study data {{ s.study_name }}"
-                                            data-id="{{ s.id }}"
-                                            data-name="{{ s.study_name }}"
-                                            data-target="#deleteModal"
-                                            href="#"><i class="fas fa-trash"></i>
-                                        </a>
-                                    {% else %}
-                                        <span class="badge badge-warning"><i class="fas fa-lock"></i> Locked</span>
-                                    {% endif %}
-
-                                    {{s.study_name}}
-
-                                    {% if s.updating %}
-                                        <span class="badge badge-warning">Updating <span class="inline_loader"></span></span>
-                                    {% endif %}
-                                </h1>
-                                <h2>
-                                    <a href="{{ url_for('ui.study_data_download', id=s.id) }}">{{s.filename}}</a><br>
-                                    uploaded {{s.created_date | datetime_humanize}}
-                                </h2>
-                            </header>
-                        </div>
-                    </div>
-                    <div class="col-7">
-                        <div class="btn-toolbar float-right" role="toolbar">
-                            {% if not s.locked %}
-                                <div class="btn-group mr-1 mb-1" role="group">
-                                    <a class="btn btn-primary mb-1 lock_screen {{ disabled }}"
-                                        title="Automap columns for study data {{ s.study_name }}"
-                                        href="{{ url_for('ui.study_data_automap', id=s.id) }}"><i class="fas fa-random"></i> Automap</a>
-                                </div>
-                                <div class="btn-group mr-1 mb-1" role="group">
-                                    <a class="btn btn-primary mb-1 {{ disabled }}"
-                                        title="Edit column mapping for study data {{ s.study_name }}"
-                                        href="{{ url_for('ui.column_mapping', id=s.id) }}"><i class="fas fa-map-signs"></i><span> Mappings ({{ s.mapped_column_count }} / {{ s.column_count }})</span></a>
-                                </div>
-                                <div class="btn-group mr-1 mb-1" role="group">
-                                    <a class="btn btn-primary mb-1 {{ disabled }}"
-                                        data-toggle="modal"
-                                        title="Delete mappings for {{ s.study_name }}"
-                                        data-id="{{ s.id }}"
-                                        data-name="{{ s.study_name }}"
-                                        data-target="#deleteMappingsModal"
-                                        href="#"><i class="fas fa-times"></i> Delete Mappings</a>
-                                </div>
-                                <div class="btn-group mr-1 mb-1" role="group">
-                                    <a class="btn btn-primary mb-1 {{ disabled }}"
-                                        data-toggle="modal"
-                                        title="Lock mappings for {{ s.study_name }}"
-                                        data-id="{{ s.id }}"
-                                        data-name="{{ s.study_name }}"
-                                        data-target="#lockModal"
-                                        href="#"><i class="fas fa-lock"></i> Lock</a>
-                                </div>
-                            {% elif current_user.is_admin %}
-                                <div class="btn-group mr-1 mb-1" role="group">
-                                    <a class="btn btn-primary mb-1 {{ disabled }}"
-                                        data-toggle="modal"
-                                        title="Unlock mappings for {{ s.study_name }}"
-                                        data-id="{{ s.id }}"
-                                        data-name="{{ s.study_name }}"
-                                        data-target="#unlockModal"
-                                        href="#"><i class="fas fa-lock-open"></i> Unlock</a>
-                                </div>
-                            {% endif %}
-                            {% if current_user.is_admin %}
-                                <div class="btn-group mr-1 mb-1" role="group">
-                                    <div class="btn-group mr-1 mb-1" role="group">
-                                        <a class="btn btn-primary mb-1 {{ disabled }}"
-                                            title="Edit column mapping for study data {{ s.study_name }}"
-                                            href="{{ url_for('ui.study_data_export', id=s.id) }}"><i class="fas fa-file-export"></i><span> Export</span></a>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+                <div class="button_bar">
+                    <a class="icon upload" href="javascript:;" title="Upload Study Data" hx-get="{{ url_for('ui.study_data_upload' ) }}" hx-target="body" hx-swap="beforeend" role="button">Upload Study Data</a>
                 </div>
+            </fieldset>
+        </form>
+    </header>
+
+    {{ pagination_summary(study_datas, 'studies') }}
+
+    <ul class="panel_list">
+        {% for s in study_datas.items %}
+            <li>
+                <header class="flex_two_left_grow">
+                    <div>
+                        {% if s.updating %}
+                            {% set disabled = 'disabled' %}
+                            {% set reload = 'yes' %}
+                        {% else %}
+                            {% set disabled = '' %}
+                        {% endif %}
+                        <div class="flex_header">
+                            {% if s.updating %}
+                                <div class="pill warning">Updating</div>
+                            {% endif %}
+
+                            {% if s.locked %}
+                                <div class="pill warning icon locked">Locked</div>
+                            {% endif %}
+
+                            {% if not s.locked %}
+                                <a title="Delete study data {{ s.study_name }}" hx-post="{{ url_for('ui.study_data_delete', id=s.id) }}" hx-confirm="Are you sure you wish to delete '{{ s.study_name }}'?" href="javascript:;" class="icon delete"></a>
+                            {% endif %}
+                            <a class="icon download" title="Download study data file" href="{{ url_for('ui.study_data_download', id=s.id) }}"></a>
+
+                            <h3>{{s.study_name}}</h3>
+                        </div>
+                        <h5>uploaded {{s.created_date | datetime_humanize}}</h5>
+                    </div>
+                    <nav class="link_list">
+                        {% if not s.locked %}
+                            <a title="Automap columns for study data {{ s.study_name }}" hx-post="{{ url_for('ui.study_data_automap', id=s.id) }}" hx-confirm="Are you sure you wish to automap '{{ s.study_name }}'?" href="javascript:;" class="icon random" role="button">Automap</a>
+                            <a title="Edit column mapping for study data {{ s.study_name }}" href="{{ url_for('ui.column_mapping', id=s.id) }}" class="icon signpost" role="button">Mappings ({{ s.mapped_column_count }} / {{ s.column_count }})</a>
+                            <a title="Delete mappings for {{ s.study_name }}" hx-post="{{ url_for('ui.study_data_delete_mappings', id=s.id) }}" hx-confirm="Are you sure you wish to delete the mappings for '{{ s.study_name }}'?" href="javascript:;" class="icon times" role="button">Delete Mappings</a>
+                            <a title="Lock mappings for {{ s.study_name }}" hx-post="{{ url_for('ui.study_data_lock', id=s.id) }}" hx-confirm="Are you sure you wish to lock '{{ s.study_name }}'?" href="javascript:;" class="icon lock" role="button">Lock</a>
+                        {% elif current_user.is_admin %}
+                            <a title="Unlock mappings for {{ s.study_name }}" hx-post="{{ url_for('ui.study_data_unlock', id=s.id) }}" hx-confirm="Are you sure you wish to unlock '{{ s.study_name }}'?" href="javascript:;" class="icon unlock" role="button">Unlock</a>
+                        {% endif %}
+                        {% if current_user.is_admin %}
+                            <a title="Export column mappings for study data {{ s.study_name }}" href="{{ url_for('ui.study_data_export', id=s.id) }}" class="icon export" role="button">Export</a>
+                        {% endif %}
+                    </nav>    
+                </header>
             </li>
         {% endfor %}
     </ul>
 </section>
 
 {{ render_pagination(study_datas, 'ui.index', form=search_form) }}
-
-
-{% call render_modal('deleteModal', 'Delete Study Data') %}
-    <p id="modal_description">Please confirm that you wish to delete <span id="name"></span>.</p>
-    <form id="delete_form" action="{{ url_for('ui.study_data_delete', prev=request.url) }}" method="POST" enctype="multipart/form-data">
-        <fieldset>
-            {{ confirm_form.hidden_tag() }}
-
-            {{ render_button_bar(cancel_url=request.url, submit_label="Delete") }}
-        </fieldset>
-    </form>
-{% endcall %}
-
-{% call render_modal('deleteMappingsModal', 'Delete Study Data Mappings') %}
-    <p id="modal_description">Please confirm that you wish to delete the mappings for <span id="name"></span>.</p>
-    <form id="delete_form" action="{{ url_for('ui.study_data_delete_mappings', prev=request.url) }}" method="POST" enctype="multipart/form-data">
-        <fieldset>
-            {{ confirm_form.hidden_tag() }}
-
-            {{ render_button_bar(cancel_url=request.url, submit_label="Delete") }}
-        </fieldset>
-    </form>
-{% endcall %}
-
-{% call render_modal('lockModal', 'Lock Study Data') %}
-    <p id="modal_description">Please confirm that you wish to lock <span id="name"></span>.</p>
-    <form id="lock_form" action="{{ url_for('ui.study_data_lock', prev=request.url) }}" method="POST" enctype="multipart/form-data">
-        <fieldset>
-            {{ confirm_form.hidden_tag() }}
-
-            {{ render_button_bar(cancel_url=request.url, submit_label="Lock") }}
-        </fieldset>
-    </form>
-{% endcall %}
-
-{% call render_modal('unlockModal', 'Unlock Study Data') %}
-    <p id="modal_description">Please confirm that you wish to unlock <span id="name"></span>.</p>
-    <form id="delete_form" action="{{ url_for('ui.study_data_unlock', prev=request.url) }}" method="POST" enctype="multipart/form-data">
-        <fieldset>
-            {{ confirm_form.hidden_tag() }}
-
-            {{ render_button_bar(cancel_url=request.url, submit_label="Unlock") }}
-        </fieldset>
-    </form>
-{% endcall %}
-
-{% endblock %}
-
-
-{% block js %}
-<script>
-    $(document).ready(function(){
-        $('#deleteModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var modal = $(this);
-
-            modal.find('#name').text(button.data('name'));
-            modal.find("#id").val(button.data('id'));
-        });
-
-        $('#deleteMappingsModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var modal = $(this);
-
-            modal.find('#name').text(button.data('name'));
-            modal.find("#id").val(button.data('id'));
-        });
-
-        $('#lockModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var modal = $(this);
-
-            modal.find('#name').text(button.data('name'));
-            modal.find("#id").val(button.data('id'));
-        });
-
-        $('#unlockModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var modal = $(this);
-
-            modal.find('#name').text(button.data('name'));
-            modal.find("#id").val(button.data('id'));
-        });
-    });
-
-</script>
 
 {% endblock %}

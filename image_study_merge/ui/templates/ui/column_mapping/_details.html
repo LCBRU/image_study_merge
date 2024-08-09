@@ -1,0 +1,100 @@
+{% from "lbrc/tabbed_display.html" import tabbed_display_tab with context %}
+
+{% macro render_column_mapping(mapping, details_selector='suggestions') %}
+    <li id="details_{{mapping.id}}" hx-target="#details_{{mapping.id}}" hx-swap="outerHTML">
+        <header class="flex_two_left_grow">
+            <h3>#{{ mapping.column_number }}: {{ mapping.name }}</h3>
+            <select name="mapping" id="mapping-{{ mapping.id }}" data-id="{{ mapping.id }}">
+                {% for g in data_dictionary_options %}
+                    <optgroup label="{{ g['group'] }}">
+                        {% for o in g['fields'] %}
+                            <option value="{{ o.field_name }}" {% if o.field_name == mapping.mapping %}selected{% endif %} hx-post="{{url_for('ui.column_mapping_update', id=mapping.id, mapping=o.field_name, details_selector=details_selector)}}">{{ o.field_label }}</option>
+                        {% endfor %}
+                    </optgroup>
+                {% endfor %}
+            </select>
+        </header>
+
+        <div class="tabbed_display">
+            <div class="tabbed_display_tabs {{details_selector}}">
+                {{ tabbed_display_tab(details_selector, 'suggestions', 'Suggestions', url_for('ui.column_mapping_details', id=mapping.id, details_selector='suggestions')) }}
+                {{ tabbed_display_tab(details_selector, 'sample_data', 'Sample Data', url_for('ui.column_mapping_details', id=mapping.id, details_selector='sample_data')) }}
+                {% if mapping.has_value_choices() %}
+                    {{ tabbed_display_tab(details_selector, 'value_mappings', 'Value Mappings', url_for('ui.column_mapping_details', id=mapping.id, details_selector='value_mappings')) }}
+                {% endif %}
+            </div>
+            <div class="tabbed_display_content">
+                {% if details_selector == 'suggestions' %}
+                    {{ render_column_mapping_suggestions(mapping) }}
+                {% elif details_selector == 'sample_data' %}
+                    {{ render_column_mapping_sample_data(mapping) }}
+                {% elif details_selector == 'value_mappings' %}
+                    {{ render_column_mapping_value_mappings(mapping) }}
+                {% endif %}
+            </div>
+        </div>
+    </li>
+{% endmacro %}
+
+
+{% macro render_column_mapping_suggestions(mapping) %}
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Section</th>
+                <th scope="col">Name</th>
+                <th scope="col">Type</th>
+                <th scope="col">Score</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in mapping.suggested_mappings | sort(attribute='match_score', reverse = True) %}
+                <tr>
+                    <td>{{ s.data_dictionary.group_name }}</td>
+                    <td>{{ s.data_dictionary.field_description }}</td>
+                    <td>{{ s.data_dictionary.field_type }}</td>
+                    <td>{{ s.match_score }}</td>
+                    <td>
+                        <button  hx-post="{{url_for('ui.column_mapping_update', id=mapping.id, mapping=s.mapping, details_selector='suggestions')}}" role="button" type="button">Use</button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+
+{% macro render_column_mapping_sample_data(mapping) %}
+    <nav class="link_list">
+        {% for s in mapping.unique_data_value() | sort %}
+            <div class="pill">{{s}}</div>
+        {% endfor %}
+    </nav>
+{% endmacro %}
+
+
+{% macro render_column_mapping_value_mappings(mapping) %}
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Source</th>
+                <th scope="col">Destination</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vm in mapping.value_mappings | sort(attribute='value') %}
+                <tr>
+                    <td>{{ vm.value }}</td>
+                    <td>
+                        <select name="mapping" id="mapping-{{ vm.id }}" data-id="{{vm.id}}">
+                            {% for value, name in value_mapping_choices.items() %}
+                                <option value="{{ value }}" {% if value == vm.mapping %}selected{% endif %} hx-post="{{url_for('ui.value_mapping_update', id=vm.id, mapping=value)}}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}

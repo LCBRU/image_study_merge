@@ -130,5 +130,6 @@ dmypy.json
 
 # Data
 upload/
+file_uploads/
 database.db
 src/

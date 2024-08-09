@@ -1,7 +1,8 @@
-from itertools import islice
-from flask import render_template, request
-from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn, StudyDataColumnSuggestion
+from flask import flash, render_template, render_template_string, request
+from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn, StudyDataColumnSuggestion, StudyDataColumnValueMapping
 from lbrc_flask.database import db
+from lbrc_flask.logging import log_exception
+from lbrc_flask.response import refresh_response
 from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 
@@ -54,16 +55,17 @@ def column_mapping(id):
         search_form=search_form,
         mappings=mappings,
         data_dictionary_options=DataDictionary.grouped_data_dictionary(),
-        show_suggestions=search_form.show_suggestions.data,
     )
 
 
-@blueprint.route("/column_mapping/update", methods=['POST'])
-def column_mapping_update():
+@blueprint.route("/column_mapping/<int:id>/map_to/", methods=['POST'])
+@blueprint.route("/column_mapping/<int:id>/map_to/<string:mapping>", methods=['POST'])
+def column_mapping_update(id, mapping=''):
     try:
-        study_data_column = StudyDataColumn.query.get_or_404(request.json['study_data_column_id'])
+        details_selector=request.form.get('details_selector', 'suggestions')
 
-        study_data_column.mapping = request.json['mapping']
+        study_data_column = StudyDataColumn.query.get_or_404(id)
+        study_data_column.mapping = mapping
 
         db.session.add(study_data_column)
         db.session.commit()
@@ -72,16 +74,62 @@ def column_mapping_update():
             if study_data_column.mapped_data_dictionary.has_choices:
                 automap_value__map_exact_name(study_data_column)
 
-        return '', 205
+        db.session.commit()
 
-    except:
-        return 'A problem has occured.  Please try reloading the page.', 500
+        return refresh_column_mapping_details(id, details_selector)
+
+    except Exception as e:
+        log_exception(e)
+        flash('A problem has occured.  Please try reloading the page.', 'error')
+
+    return refresh_response()
 
 
-@blueprint.route("/column_mapping/source_sample/", methods=['POST'])
-def column_mapping_source_sample():
-    col = StudyDataColumn.query.get_or_404(request.json['study_data_column_id'])
+@blueprint.route("/study_data_column/<int:id>/<string:details_selector>")
+def column_mapping_details(id, details_selector):
+    return refresh_column_mapping_details(id, details_selector)
 
-    return {
-        'samples': list(islice(col.unique_data_value(), None, 20))
+
+def refresh_column_mapping_details(id, details_selector):
+    col = db.get_or_404(StudyDataColumn, id)
+
+    value_mapping_choices = {
+        '': DataDictionary.NOT_YET_MAPPED,
+        DataDictionary.DO_NOT_IMPORT: DataDictionary.DO_NOT_IMPORT,
+        DataDictionary.NO_SUITABLE_MAPPING: DataDictionary.NO_SUITABLE_MAPPING,
     }
+
+    if col.has_value_choices():
+        value_mapping_choices.update({value: f'{name} ({value})' for value, name in
+            col.mapped_data_dictionary.choice_values.items()
+        })
+
+    template = '''
+        {% from "ui/column_mapping/_details.html" import render_column_mapping with context %}
+
+        {{ render_column_mapping(mapping, details_selector) }}
+    '''
+
+    return render_template_string(
+        template,
+        mapping=col,
+        details_selector=details_selector,
+        value_mapping_choices=value_mapping_choices,
+        data_dictionary_options=DataDictionary.grouped_data_dictionary(),
+    )
+
+
+@blueprint.route("/value_mapping/<int:id>/map_to/", methods=['POST'])
+@blueprint.route("/value_mapping/<int:id>/map_to/<string:mapping>", methods=['POST'])
+def value_mapping_update(id, mapping=''):
+    try:
+        vm = StudyDataColumnValueMapping.query.get_or_404(id)
+
+        vm.mapping = mapping
+
+        db.session.add(vm)
+        db.session.commit()
+    except:
+        flash('A problem has occured.  Please try reloading the page.')
+
+    return refresh_column_mapping_details(vm.study_data_column_id, 'value_mappings')

@@ -1,66 +1,68 @@
-{% extends "ui/page.html" %}
-{% from "lbrc_flask/form_macros.html" import render_search, render_pagination, render_button_bar %}
-{% from "lbrc_flask/modal_macros.html" import render_modal %}
+{% extends "ui/menu_page.html" %}
+{% from "lbrc/form_macros.html" import render_form_fields %}
+{% from "lbrc/tabbed_display.html" import tabbed_display_tab with context %}
 
-{% block content %}
+{% block menu_page_content %}
 
-<section>
-    <div class="page-header">
-        <h1>Data Dictionary</h1>
+<section class="container tabbed_display" hx-target="body" hx-swap="outerHTML">
+    <header>
+        <h2>Data Dictionary</h2>
 
-        <ul class="nav nav-pills nav-fill">
-            {% for name, title in forms.items() %}
-                <li class="nav-item">
-                    <a class="nav-link{% if name == form_name %} active{% endif %}" href="{{ url_for('ui.data_dictionary', form_name=name) }}">{{ title }}</a>
-                </li>
-            {% endfor %}
-        </ul>
+        <div class="button_bar">
+            {% if current_user.is_admin %}
+                <a class="icon upload" href="javascript:;" title="Upload Study Data" hx-get="{{ url_for('ui.data_dictionary_upload' ) }}" hx-target="body" hx-swap="beforeend" role="button">Upload Data Dictionary</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="tabbed_display_tabs {{form_name}}">
+        {% for name, title in forms.items() %}
+            {{ tabbed_display_tab(form_name, name, title, url_for('ui.data_dictionary', form_name=name)) }}
+        {% endfor %}
     </div>
-
+    <div class="tabbed_display_content">
+        
+        
     {% for section_name, fields in sections.items() %}
-        <h1>{{ section_name }}</h1>
-        <table class="table table-hover">
+        <h2>{{ section_name }}</h2>
+        <table>
             <thead>
                 <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Label</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Choices</th>
-                    <th scope="col">Notes</th>
-                    <th scope="col">Validation</th>
-                    <th scope="col">Min</th>
-                    <th scope="col">Max</th>
+                    <th>Name</th>
+                    <th>Label</th>
+                    <th>Type</th>
+                    <th>Choices</th>
+                    <th>Notes</th>
+                    <th>Validation</th>
+                    <th>Min</th>
+                    <th>Max</th>
                 </tr>
             </thead>
             <tbody>
                 {% for d in fields %}
-                    <tr>
-                        <td>{{ d.field_name }}</td>
-                        <td>{{ d.field_label }}</td>
-                        <td>{{ d.field_type }}</td>
-                        <td>
-                            {% if d.choice_values | length > 0 %}
-                                <ul>
-                                    {% for c_value, c_name in d.choice_values.items() %}
-                                        <li>{{ c_name }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </td>
-                        <td>{{ d.field_note }}</td>
-                        <td>{{ d.text_validation_type }}</td>
-                        <td>{{ d.text_validation_min }}</td>
-                        <td>{{ d.text_validation_max }}</td>
-                    </tr>
+                <tr>
+                    <td>{{ d.field_name }}</td>
+                    <td>{{ d.field_label }}</td>
+                    <td>{{ d.field_type }}</td>
+                    <td>
+                        {% if d.choice_values | length > 0 %}
+                        <ul>
+                            {% for c_value, c_name in d.choice_values.items() %}
+                            <li>{{ c_name }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </td>
+                    <td>{{ d.field_note }}</td>
+                    <td>{{ d.text_validation_type }}</td>
+                    <td>{{ d.text_validation_min }}</td>
+                    <td>{{ d.text_validation_max }}</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% endfor %}
-
+        {% endfor %}
+    </div>
+        
 </section>
-
-{% endblock %}
-
-
-{% block js %}
 {% endblock %}

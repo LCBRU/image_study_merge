@@ -8,6 +8,7 @@ from lbrc_flask.database import db
 from wtforms import StringField
 from wtforms.validators import Length, DataRequired
 from lbrc_flask.security import must_be_admin
+from lbrc_flask.response import refresh_response
 
 
 class UploadStudyDataForm(FlashingForm):
@@ -73,15 +74,17 @@ def study_data_upload():
 
         flash('Study Data Uploaded')
 
-        return redirect(url_for('ui.index'))
+        return refresh_response()
 
     return render_template(
-        "ui/study_data_upload.html",
+        "lbrc/form_modal.html",
+        title='Study Data Upload',
         form=form,
+        url=url_for('ui.study_data_upload', id=id),
     )
 
 
-@blueprint.route("/study_data/download/<int:id>")
+@blueprint.route("/study_data/<int:id>/download")
 def study_data_download(id):
     sd = StudyData.query.get_or_404(id)
 
@@ -92,71 +95,59 @@ def study_data_download(id):
     )
 
 
-@blueprint.route("/study_data/delete", methods=['POST'])
-def study_data_delete():
-    form = ConfirmForm()
+@blueprint.route("/study_data/<int:id>/delete", methods=['POST'])
+def study_data_delete(id):
+    sd = StudyData.query.get_or_404(id)
+    delete_study_data(sd.id)
 
-    if form.validate_on_submit():
-        sd = StudyData.query.get_or_404(form.id.data)
-        delete_study_data(sd.id)
-
-    return redirect(url_for('ui.index'))
+    return refresh_response()
 
 
-@blueprint.route("/study_data/delete_mappings", methods=['POST'])
-def study_data_delete_mappings():
-    form = ConfirmForm()
+@blueprint.route("/study_data/<int:id>/delete_mappings", methods=['POST'])
+def study_data_delete_mappings(id):
+    sd = StudyData.query.get_or_404(id)
+    delete_mappings(sd.id)
 
-    if form.validate_on_submit():
-        sd = StudyData.query.get_or_404(form.id.data)
-        delete_mappings(sd.id)
-
-    return redirect(url_for('ui.index'))
+    return refresh_response()
 
 
-@blueprint.route("/study_data/automap/<int:id>")
+@blueprint.route("/study_data/<int:id>/automap", methods=['POST'])
 def study_data_automap(id):
     study_data = StudyData.query.get_or_404(id)
 
     automap(study_data.id)
 
-    return redirect(url_for('ui.index'))
+    return refresh_response()
 
 
-@blueprint.route("/study_data/lock", methods=['POST'])
-def study_data_lock():
-    form = ConfirmForm()
+@blueprint.route("/study_data/<int:id>/lock", methods=['POST'])
+def study_data_lock(id):
+    sd = StudyData.query.get_or_404(id)
+    sd.locked = True
 
-    if form.validate_on_submit():
-        sd = StudyData.query.get_or_404(form.id.data)
-        sd.locked = True
+    db.session.add(sd)
+    db.session.commit()
 
-        db.session.add(sd)
-        db.session.commit()
+    flash(f'Study data {sd.study_name} locked')
 
-        flash(f'Study data {sd.study_name} locked')
-
-    return redirect(url_for('ui.index'))
+    return refresh_response()
 
 
-@blueprint.route("/study_data/unlock", methods=['POST'])
+@blueprint.route("/study_data/<int:id>/unlock", methods=['POST'])
 @must_be_admin()
-def study_data_unlock():
-    form = ConfirmForm()
+def study_data_unlock(id):
+    sd = StudyData.query.get_or_404(id)
+    sd.locked = False
 
-    if form.validate_on_submit():
-        sd = StudyData.query.get_or_404(form.id.data)
-        sd.locked = False
+    db.session.add(sd)
+    db.session.commit()
 
-        db.session.add(sd)
-        db.session.commit()
+    flash(f'Study data {sd.study_name} unlocked')
 
-        flash(f'Study data {sd.study_name} unlocked')
-
-    return redirect(url_for('ui.index'))
+    return refresh_response()
 
 
-@blueprint.route("/study_data/export/<int:id>")
+@blueprint.route("/study_data/<int:id>/export")
 @must_be_admin()
 def study_data_export(id):
     return create_export(id)

@@ -10,6 +10,7 @@ from datetime import datetime
 from lbrc_flask.column_data import CsvData
 from lbrc_flask.database import db
 from lbrc_flask.security import must_be_admin
+from lbrc_flask.response import refresh_response
 
 
 class UploadDataDictionaryForm(FlashingForm):
@@ -33,8 +34,10 @@ def data_dictionary(form_name=None):
 
     data_dictionary = (DataDictionary.query
         .filter(DataDictionary.form_name == form_name)
-        .order_by(DataDictionary.field_number)
-        .all()
+        .order_by(DataDictionary.form_name,
+                  DataDictionary.section_name,
+                  DataDictionary.field_number,
+                  ).all()
     )
 
     sections = {}
@@ -101,11 +104,12 @@ def data_dictionary_upload():
 
         flash('Data Dictionary Uploaded')
 
-        return redirect(url_for('ui.data_dictionary'))
+        return refresh_response()
 
     return render_template(
-        "ui/data_dictionary/upload.html",
+        "lbrc/form_modal.html",
+        title='Upload Data Dictionary',
         form=form,
+        warning='Uploading a new data dictionary will overwrite any previous data dictionary',
+        url=url_for('ui.data_dictionary_upload'),
     )
-
-

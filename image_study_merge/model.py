@@ -3,6 +3,7 @@ import re
 from itertools import groupby
 from flask import current_app
 from pathlib import Path
+from sqlalchemy import select
 from werkzeug.utils import secure_filename
 from lbrc_flask.security import AuditMixin
 from lbrc_flask.model import CommonMixin
@@ -134,7 +135,14 @@ class DataDictionary(AuditMixin, CommonMixin, db.Model):
             field_label=DataDictionary.NO_SUITABLE_MAPPING,
         ))
 
-        dd_items.extend(DataDictionary.query.all())
+        dd_items.extend(
+            db.session.execute(
+                select(DataDictionary)
+                .order_by(
+                    DataDictionary.form_name,
+                    DataDictionary.section_name,
+                    DataDictionary.field_name,
+                    )).scalars())
 
         return DataDictionary.group_data_dictionary_items(dd_items)
 
@@ -235,6 +243,9 @@ class StudyDataColumn(AuditMixin, CommonMixin, db.Model):
 
     def unique_data_value(self):
         return {(d.value or '').lower().strip() for d in self.data if d.value}
+
+    def has_value_choices(self):
+        return self.is_mapped and self.mapped_data_dictionary.has_choices
 
     @property
     def mapped_values_dictionary(self):
