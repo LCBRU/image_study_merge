@@ -1,4 +1,4 @@
-git+https://github.com/LCBRU/lbrc_flask.git@pyproject
+git+https://github.com/LCBRU/lbrc_flask.git
 nltk
 pymysql
 urllib3
