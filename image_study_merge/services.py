@@ -380,7 +380,7 @@ def get_word_bits(value, debug=False):
 
 def standardize_name(value):
     re_not_alphanumeric = re.compile('[^a-zA-Z]')
-    re_in_brackets = re.compile('\(.*\)')
+    re_in_brackets = re.compile('(.*)')
 
     return re_not_alphanumeric.sub('', re_in_brackets.sub(' ', value))
 
