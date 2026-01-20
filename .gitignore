@@ -133,3 +133,4 @@ upload/
 file_uploads/
 database.db
 src/
+requirements.dev
