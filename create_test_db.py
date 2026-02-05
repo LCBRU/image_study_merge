@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 
-from random import choice, randint
 from dotenv import load_dotenv
+load_dotenv()
+
+from random import choice, randint
 from lbrc_flask.database import db
 from lbrc_flask.security import init_roles, init_users
 from sqlalchemy import select
 from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn, StudyDataCsv, StudyDataRow, StudyDataRowData
 from faker import Faker
+from lbrc_flask.pytest.faker import LbrcFlaskFakerProvider
+from tests.faker import ImageStudyMergeProvider
 
 from image_study_merge.services import automap_column__match_by_name, extract_study_data_values
-fake = Faker()
 
-load_dotenv()
+fake: Faker = Faker("en_GB")
+fake.add_provider(LbrcFlaskFakerProvider)
+fake.add_provider(ImageStudyMergeProvider)
 
 from image_study_merge import create_app
 

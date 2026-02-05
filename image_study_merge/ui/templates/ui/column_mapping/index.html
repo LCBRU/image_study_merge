@@ -20,6 +20,8 @@
         </form>
     </header>
 
+    {{ pagination_summary(mappings, 'column mapping') }}
+
     <ul class="panel_list">
         {% for m in mappings.items %}
             {{ render_column_mapping(m) }}
