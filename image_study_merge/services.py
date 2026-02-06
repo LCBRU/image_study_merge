@@ -9,6 +9,8 @@ from nltk.corpus import stopwords
 from lbrc_flask.celery import celery
 from lbrc_flask.export import csv_download
 from sqlalchemy.orm import joinedload
+from sqlalchemy import select, delete
+
 
 thesaurus = [
     {'gender', 'sex'},
@@ -123,7 +125,7 @@ units = {
 }
 
 def extract_study_data(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
     study_data.updating = True
     db.session.add(study_data)
     db.session.commit()
@@ -133,13 +135,13 @@ def extract_study_data(study_data_id):
 
 @celery.task()
 def _extract_study_data(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
 
     extract_study_data_columns(study_data)
     extract_study_data_rows(study_data)
     extract_study_data_values(study_data)
 
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
     study_data.updating = False
     db.session.add(study_data)
     db.session.commit()
@@ -208,7 +210,7 @@ def extract_study_data_values(study_data):
 
 
 def delete_mappings(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
     study_data.updating = True
     db.session.add(study_data)
     db.session.commit()
@@ -218,7 +220,7 @@ def delete_mappings(study_data_id):
 
 @celery.task()
 def _delete_mappings(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
 
     columns = []
     value_mappings = []
@@ -241,14 +243,14 @@ def _delete_mappings(study_data_id):
 
     db.session.commit()
 
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
     study_data.updating = False
     db.session.add(study_data)
     db.session.commit()
 
 
 def delete_study_data(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
     study_data.deleted = True
     db.session.add(study_data)
     db.session.commit()
@@ -258,13 +260,13 @@ def delete_study_data(study_data_id):
 
 @celery.task()
 def _delete_study_data(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
 
     db.session.delete(study_data)
     db.session.commit()
 
 def automap(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
     study_data.updating = True
     db.session.add(study_data)
     db.session.commit()
@@ -274,9 +276,9 @@ def automap(study_data_id):
 
 @celery.task()
 def _automap(study_data_id):
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
 
-    data_dictionary = DataDictionary.query.all()
+    data_dictionary = db.session.execute(select(DataDictionary)).scalars().all()
 
     automap_column__do_not_map(study_data, data_dictionary)
     automap_column__map_exact_field_name(study_data, data_dictionary)
@@ -285,7 +287,7 @@ def _automap(study_data_id):
 
     automap_values__map_exact_name(study_data)
 
-    study_data = StudyData.query.get(study_data_id)
+    study_data = db.session.get(StudyData, study_data_id)
     study_data.updating = False
     db.session.add(study_data)
     db.session.commit()
@@ -386,8 +388,11 @@ def standardize_name(value):
 
 
 def delete_column_suggested_mappings(study_data):
-    sdi = StudyDataColumn.query.with_entities(StudyDataColumn.id).filter(StudyDataColumn.study_data_id == study_data.id).subquery()
-    StudyDataColumnSuggestion.query.filter(StudyDataColumnSuggestion.study_data_column_id.in_(sdi)).delete(synchronize_session='fetch')
+    sdi = select(StudyDataColumn.id).where(StudyDataColumn.study_data_id == study_data.id).subquery()
+    db.session.execute(
+        delete(StudyDataColumnSuggestion)
+        .where(StudyDataColumnSuggestion.study_data_column_id.in_(sdi))
+    )
 
 
 def automap_column__do_not_map(study_data, data_dictionary):
@@ -439,9 +444,15 @@ def automap_values__dictionary(study_data_column, dictionary):
 
 
 def create_export(study_id):
-    sd = StudyData.query.options(joinedload(StudyData.columns)).get(study_id)
+    sd = db.session.execute(
+        select(StudyData)
+        .options(joinedload(joinedload(StudyData.columns)))
+        .where(StudyData.id == study_id)
+    ).scalar_one()
 
-    field_names = chain(*[dd.get_export_column_names() for dd in DataDictionary.query.all()])
+    data_dictionary = db.session.execute(select(DataDictionary))
+
+    field_names = chain(*[dd.get_export_column_names() for dd in data_dictionary])
     rows = [c.get_export_mapping() for c in sd.rows]
 
     return csv_download(f'export_{study_id}', field_names, rows)

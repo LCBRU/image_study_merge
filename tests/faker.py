@@ -1,5 +1,6 @@
 from functools import cache
 from pathlib import Path
+from random import choice
 from typing import Optional
 from faker.providers import BaseProvider
 from lbrc_flask.pytest.faker import FakeCreator, FakeCreatorArgs, UserCreator
@@ -12,7 +13,7 @@ class StudyDataCreator(FakeCreator):
     def _create_item(self, save, args: FakeCreatorArgs):
         params = dict(
             study_name = args.get('study_name', self.faker.unique.word()),
-            filename = args.get('filename', self.faker.file_name()),
+            filename = args.get('filename', self.faker.file_name(extension=choice(['csv']))),
             updating = args.get('updating', False),
             deleted = args.get('deleted', False),
             locked = args.get('locked', False),

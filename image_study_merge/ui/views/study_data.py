@@ -9,6 +9,7 @@ from wtforms import StringField
 from wtforms.validators import Length, DataRequired
 from lbrc_flask.security import must_be_admin
 from lbrc_flask.response import refresh_response
+from sqlalchemy import select
 
 
 class UploadStudyDataForm(FlashingForm):
@@ -34,16 +35,12 @@ class UploadStudyDataForm(FlashingForm):
 def index():
     search_form = SearchForm(formdata=request.args)
 
-    q = StudyData.query.filter(StudyData.deleted == False)
+    q = select(StudyData).where(StudyData.deleted == False)
 
     if search_form.search.data:
         q = q.filter(StudyData.filename.like(f'%{search_form.search.data}%'))
 
-    study_datas = q.paginate(
-        page=search_form.page.data,
-        per_page=5,
-        error_out=False,
-    )
+    study_datas = db.paginate(select=q)
 
     return render_template(
         "ui/index.html",
@@ -86,7 +83,7 @@ def study_data_upload():
 
 @blueprint.route("/study_data/<int:id>/download")
 def study_data_download(id):
-    sd = StudyData.query.get_or_404(id)
+    sd = db.get_or_404(StudyData, id)
 
     return send_file(
         sd.filepath,
@@ -97,7 +94,7 @@ def study_data_download(id):
 
 @blueprint.route("/study_data/<int:id>/delete", methods=['POST'])
 def study_data_delete(id):
-    sd = StudyData.query.get_or_404(id)
+    sd = db.get_or_404(StudyData, id)
     delete_study_data(sd.id)
 
     return refresh_response()
@@ -105,7 +102,7 @@ def study_data_delete(id):
 
 @blueprint.route("/study_data/<int:id>/delete_mappings", methods=['POST'])
 def study_data_delete_mappings(id):
-    sd = StudyData.query.get_or_404(id)
+    sd = db.get_or_404(StudyData, id)
     delete_mappings(sd.id)
 
     return refresh_response()
@@ -113,7 +110,7 @@ def study_data_delete_mappings(id):
 
 @blueprint.route("/study_data/<int:id>/automap", methods=['POST'])
 def study_data_automap(id):
-    study_data = StudyData.query.get_or_404(id)
+    study_data = db.get_or_404(StudyData, id)
 
     automap(study_data.id)
 
@@ -122,7 +119,7 @@ def study_data_automap(id):
 
 @blueprint.route("/study_data/<int:id>/lock", methods=['POST'])
 def study_data_lock(id):
-    sd = StudyData.query.get_or_404(id)
+    sd = db.get_or_404(StudyData, id)
     sd.locked = True
 
     db.session.add(sd)
@@ -136,7 +133,7 @@ def study_data_lock(id):
 @blueprint.route("/study_data/<int:id>/unlock", methods=['POST'])
 @must_be_admin()
 def study_data_unlock(id):
-    sd = StudyData.query.get_or_404(id)
+    sd = db.get_or_404(StudyData, id)
     sd.locked = False
 
     db.session.add(sd)

@@ -10,6 +10,7 @@ from lbrc_flask.model import CommonMixin
 from lbrc_flask.database import db
 from lbrc_flask.column_data import ExcelData, Excel97Data, CsvData
 from lbrc_flask.validators import is_integer, is_float
+from sqlalchemy import select, func
 
 
 def study_data_factory(filename, **kwargs):
@@ -61,11 +62,18 @@ class StudyData(AuditMixin, CommonMixin, db.Model):
 
     @property
     def column_count(self):
-        return StudyDataColumn.query.filter(StudyDataColumn.study_data_id == self.id).count()
+        return db.session.execute(
+            select(func.count(1))
+            .where(StudyDataColumn.study_data_id == self.id)
+        ).scalar_one()
 
     @property
     def mapped_column_count(self):
-        return StudyDataColumn.query.filter(StudyDataColumn.study_data_id == self.id).filter(StudyDataColumn.mapped_data_dictionary != None).count()
+        return db.session.execute(
+            select(func.count(1))
+            .where(StudyDataColumn.study_data_id == self.id)
+            .where(StudyDataColumn.mapped_data_dictionary != None)
+        ).scalar_one()
 
 
 class StudyDataXlsx(StudyData):

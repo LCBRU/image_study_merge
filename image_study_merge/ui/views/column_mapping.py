@@ -3,7 +3,7 @@ from image_study_merge.model import DataDictionary, StudyData, StudyDataColumn, 
 from lbrc_flask.database import db
 from lbrc_flask.logging import log_exception
 from lbrc_flask.response import refresh_response
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from image_study_merge.services import automap_value__map_exact_name
@@ -13,26 +13,26 @@ from .. import blueprint
 
 @blueprint.route("/column_mapping/<int:id>", methods=['GET', 'POST'])
 def column_mapping(id):
-    study_data = StudyData.query.get_or_404(id)
+    study_data = db.get_or_404(StudyData, id)
 
     search_form = MappingSearchForm(formdata=request.args)
 
-    q = StudyDataColumn.query.filter(StudyDataColumn.study_data_id == id)
+    q = select(StudyDataColumn).where(StudyDataColumn.study_data_id == id)
 
     if search_form.search.data:
-        q = q.filter(StudyDataColumn.name.like(f'%{search_form.search.data}%'))
+        q = q.where(StudyDataColumn.name.like(f'%{search_form.search.data}%'))
 
     if search_form.show_do_not_import.data != '1':
-        q = q.filter(func.coalesce(StudyDataColumn.mapping, '') != DataDictionary.DO_NOT_IMPORT)
+        q = q.where(func.coalesce(StudyDataColumn.mapping, '') != DataDictionary.DO_NOT_IMPORT)
 
     if search_form.show_not_yet_mapped.data != '1':
-        q = q.filter(func.coalesce(StudyDataColumn.mapping, '') != '')
+        q = q.where(func.coalesce(StudyDataColumn.mapping, '') != '')
 
     if search_form.show_no_suitable_mapping.data != '1':
-        q = q.filter(func.coalesce(StudyDataColumn.mapping, '') != DataDictionary.NO_SUITABLE_MAPPING)
+        q = q.where(func.coalesce(StudyDataColumn.mapping, '') != DataDictionary.NO_SUITABLE_MAPPING)
 
     if search_form.show_mapped.data != '1':
-        q = q.filter(or_(
+        q = q.where(or_(
             func.coalesce(StudyDataColumn.mapping, '') == '',
             func.coalesce(StudyDataColumn.mapping, '') == DataDictionary.DO_NOT_IMPORT,
         ))
@@ -43,11 +43,7 @@ def column_mapping(id):
         selectinload(StudyDataColumn.value_mappings),
     )
 
-    mappings = q.paginate(
-            page=search_form.page.data,
-            per_page=20,
-            error_out=False,
-        )
+    mappings = db.paginate(select=q, per_page=20)
 
     return render_template(
         "ui/column_mapping/index.html",
@@ -64,7 +60,7 @@ def column_mapping_update(id, mapping=''):
     try:
         details_selector=request.form.get('details_selector', 'suggestions')
 
-        study_data_column = StudyDataColumn.query.get_or_404(id)
+        study_data_column = db.get_or_404(StudyDataColumn, id)
         study_data_column.mapping = mapping
 
         db.session.add(study_data_column)
@@ -123,7 +119,7 @@ def refresh_column_mapping_details(id, details_selector):
 @blueprint.route("/value_mapping/<int:id>/map_to/<string:mapping>", methods=['POST'])
 def value_mapping_update(id, mapping=''):
     try:
-        vm = StudyDataColumnValueMapping.query.get_or_404(id)
+        vm = db.get_or_404(StudyDataColumnValueMapping, id)
 
         vm.mapping = mapping
 

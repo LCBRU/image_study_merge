@@ -11,6 +11,7 @@ from lbrc_flask.column_data import CsvData
 from lbrc_flask.database import db
 from lbrc_flask.security import must_be_admin
 from lbrc_flask.response import refresh_response
+from sqlalchemy import delete
 
 
 class UploadDataDictionaryForm(FlashingForm):
@@ -66,7 +67,7 @@ def data_dictionary_upload():
         
         csv = CsvData(filepath)
 
-        DataDictionary.query.delete()
+        db.session.execute(delete(DataDictionary))
 
         section_name = ''
         i = 0

@@ -135,8 +135,10 @@ for r in study_data_rows:
 db.session.add_all(study_data_row_datas)
 db.session.commit()
 
+data_dictionary_items = db.session.execute(select(DataDictionary)).scalars().all()
+
 for s in studies:
     extract_study_data_values(s)
-    automap_column__match_by_name(s, DataDictionary.query.all())
+    automap_column__match_by_name(s, data_dictionary_items)
 
 db.session.close()
