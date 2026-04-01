@@ -1,6 +1,5 @@
 import pytest
 from faker import Faker
-from lbrc_flask.pytest.fixtures import client, initialised_app
 from lbrc_flask.pytest.faker import LbrcFlaskFakerProvider
 from image_study_merge import create_app
 from image_study_merge.config import TestConfig
